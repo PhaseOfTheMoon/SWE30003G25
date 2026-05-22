@@ -1,12 +1,14 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/dashboardLayout";
 import Link from "next/link";
+import supabase from "@/lib/supabase";
 
 const VET_NAV = [
-  { label: "Dashboard", href: "/vet", icon: "🏠" },
-  { label: "Assigned Enquiries", href: "/vet/assigned-enquiries", icon: "💬" },
-  { label: "Validate Content",   href: "/vet/validate-content",   icon: "🔬" },
+  { label: "Dashboard",           href: "/vet",                    icon: "🏠" },
+  { label: "Assigned Enquiries",  href: "/vet/assignedEnquiries",  icon: "💬" },
+  { label: "Validate Content",    href: "/vet/validateContent",    icon: "🔬" },
 ];
 
 type StatCardProps = {
@@ -50,21 +52,74 @@ function StatCard({ icon, label, value, sub, href, accent }: StatCardProps) {
   );
 }
 
-export default function VetDashboardPage() {
-  // Replace with real Supabase counts
-  const stats = {
-    assignedEnquiries:  4,
-    respondedEnquiries: 9,
-    pendingReviews:     3,
-    validatedContent:   11,
-    rejectedContent:    2,
-  };
+type Enquiry = { subject: string; status: string; time: string };
 
-  const recentEnquiries = [
-    { subject: "Dog having seizure",    status: "assigned",  time: "20 mins ago" },
-    { subject: "Cat swallowed string",  status: "assigned",  time: "2 hours ago" },
-    { subject: "Bird broken wing",      status: "responded", time: "5 hours ago" },
-  ];
+export default function VetDashboardPage() {
+  const [vetName, setVetName] = useState("Veterinarian");
+  const [stats, setStats] = useState({
+    assignedEnquiries:  0,
+    respondedEnquiries: 0,
+    pendingReviews:     0,
+    validatedContent:   0,
+    rejectedContent:    0,
+  });
+  const [recentEnquiries, setRecentEnquiries] = useState<Enquiry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function init() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Fetch vet's profile name
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("name")
+        .eq("id", user.id)
+        .single();
+      if (profile?.name) setVetName(profile.name);
+
+      // Fetch vet's enquiry counts
+      const { data: enquiries } = await supabase
+        .from("enquiry")
+        .select("enquiryID, subject, status, createdAt")
+        .eq("vetID", user.id)
+        .order("createdAt", { ascending: false });
+
+      if (enquiries) {
+        setStats(prev => ({
+          ...prev,
+          assignedEnquiries:  enquiries.filter(e => e.status === "assigned").length,
+          respondedEnquiries: enquiries.filter(e => e.status === "responded").length,
+        }));
+        setRecentEnquiries(
+          enquiries.slice(0, 3).map(e => ({
+            subject: e.subject,
+            status:  e.status,
+            time:    new Date(e.createdAt).toLocaleString(),
+          }))
+        );
+      }
+
+      // Fetch content review counts for this vet
+      const { data: reviews } = await supabase
+        .from("content_review")
+        .select("status")
+        .eq("vetID", user.id);
+
+      if (reviews) {
+        setStats(prev => ({
+          ...prev,
+          pendingReviews:   reviews.filter(r => r.status === "pending").length,
+          validatedContent: reviews.filter(r => r.status === "validated").length,
+          rejectedContent:  reviews.filter(r => r.status === "rejected").length,
+        }));
+      }
+
+      setLoading(false);
+    }
+    init();
+  }, []);
 
   const statusColor: Record<string, string> = {
     assigned:  "#dbeafe",
@@ -76,23 +131,23 @@ export default function VetDashboardPage() {
   };
 
   return (
-    <DashboardLayout role="Veterinarian" name="Dr. Sarah Lim" navItems={VET_NAV}>
+    <DashboardLayout role="Veterinarian" name={vetName} navItems={VET_NAV}>
 
       {/* Page header */}
       <div style={{ marginBottom: "28px" }}>
         <h1 style={{ fontSize: "24px", fontWeight: "bold", color: "#111827", margin: "0 0 4px 0" }}>Dashboard</h1>
         <p style={{ fontSize: "14px", color: "#9ca3af", margin: 0 }}>
-          Welcome back, Dr. Sarah. Here's your current workload.
+          {loading ? "Loading…" : `Welcome back, ${vetName}. Here's your current workload.`}
         </p>
       </div>
 
       {/* Stat cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginBottom: "32px" }}>
-        <StatCard icon="💬" label="Assigned Enquiries"  value={stats.assignedEnquiries}  sub="Awaiting your response"         href="/vet/assigned-enquiries" accent />
-        <StatCard icon="✅" label="Enquiries Responded" value={stats.respondedEnquiries} sub="Replied to pet owners"           href="/vet/assigned-enquiries" />
-        <StatCard icon="🔬" label="Pending Reviews"     value={stats.pendingReviews}     sub="Content awaiting validation"    href="/vet/validate-content"   accent />
-        <StatCard icon="✔️" label="Validated Content"   value={stats.validatedContent}   sub="Guides approved by you"         href="/vet/validate-content" />
-        <StatCard icon="✖️" label="Rejected Content"    value={stats.rejectedContent}    sub="Sent back for revision"         href="/vet/validate-content" />
+        <StatCard icon="💬" label="Assigned Enquiries"  value={stats.assignedEnquiries}  sub="Awaiting your response"       href="/vet/assignedEnquiries" accent />
+        <StatCard icon="✅" label="Enquiries Responded" value={stats.respondedEnquiries} sub="Replied to pet owners"         href="/vet/assignedEnquiries" />
+        <StatCard icon="🔬" label="Pending Reviews"     value={stats.pendingReviews}     sub="Content awaiting validation"  href="/vet/validateContent"   accent />
+        <StatCard icon="✔️" label="Validated Content"   value={stats.validatedContent}   sub="Guides approved by you"       href="/vet/validateContent" />
+        <StatCard icon="✖️" label="Rejected Content"    value={stats.rejectedContent}    sub="Sent back for revision"       href="/vet/validateContent" />
       </div>
 
       {/* Quick actions */}
@@ -100,13 +155,13 @@ export default function VetDashboardPage() {
         <h2 style={{ fontSize: "16px", fontWeight: "bold", color: "#111827", marginBottom: "12px" }}>Quick Actions</h2>
         <div style={{ display: "flex", gap: "12px" }}>
           <Link
-            href="/vet/assigned-enquiries"
+            href="/vet/assignedEnquiries"
             style={{ padding: "10px 20px", backgroundColor: "#dc2626", color: "white", borderRadius: "4px", textDecoration: "none", fontSize: "14px", fontWeight: "600" }}
           >
             💬 View Assigned Enquiries
           </Link>
           <Link
-            href="/vet/validate-content"
+            href="/vet/validateContent"
             style={{ padding: "10px 20px", backgroundColor: "white", border: "1px solid #e5e7eb", color: "#374151", borderRadius: "4px", textDecoration: "none", fontSize: "14px", fontWeight: "600" }}
           >
             🔬 Review Pending Content
@@ -118,28 +173,32 @@ export default function VetDashboardPage() {
       <div>
         <h2 style={{ fontSize: "16px", fontWeight: "bold", color: "#111827", marginBottom: "12px" }}>Recent Assigned Enquiries</h2>
         <div style={{ backgroundColor: "white", borderRadius: "8px", border: "1px solid #e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.08)", overflow: "hidden" }}>
-          {recentEnquiries.map((item, i) => (
-            <div
-              key={i}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "14px 20px",
-                borderBottom: i < recentEnquiries.length - 1 ? "1px solid #f3f4f6" : "none",
-              }}
-            >
-              <div>
-                <p style={{ fontSize: "14px", fontWeight: "600", color: "#111827", margin: "0 0 2px 0" }}>{item.subject}</p>
-                <p style={{ fontSize: "12px", color: "#9ca3af", margin: 0 }}>{item.time}</p>
+          {recentEnquiries.length === 0 && !loading ? (
+            <p style={{ padding: "20px", fontSize: "14px", color: "#9ca3af", margin: 0 }}>No recent enquiries.</p>
+          ) : (
+            recentEnquiries.map((item, i) => (
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "14px 20px",
+                  borderBottom: i < recentEnquiries.length - 1 ? "1px solid #f3f4f6" : "none",
+                }}
+              >
+                <div>
+                  <p style={{ fontSize: "14px", fontWeight: "600", color: "#111827", margin: "0 0 2px 0" }}>{item.subject}</p>
+                  <p style={{ fontSize: "12px", color: "#9ca3af", margin: 0 }}>{item.time}</p>
+                </div>
+                <span style={{ fontSize: "12px", fontWeight: "500", padding: "3px 10px", borderRadius: "999px", backgroundColor: statusColor[item.status] ?? "#f3f4f6", color: statusText[item.status] ?? "#374151" }}>
+                  {item.status}
+                </span>
               </div>
-              <span style={{ fontSize: "12px", fontWeight: "500", padding: "3px 10px", borderRadius: "999px", backgroundColor: statusColor[item.status], color: statusText[item.status] }}>
-                {item.status}
-              </span>
-            </div>
-          ))}
+            ))
+          )}
           <div style={{ padding: "10px 20px", borderTop: "1px solid #f3f4f6" }}>
-            <Link href="/vet/assigned-enquiries" style={{ fontSize: "13px", color: "#dc2626", fontWeight: "600", textDecoration: "none" }}>
+            <Link href="/vet/assignedEnquiries" style={{ fontSize: "13px", color: "#dc2626", fontWeight: "600", textDecoration: "none" }}>
               View all assigned enquiries →
             </Link>
           </div>

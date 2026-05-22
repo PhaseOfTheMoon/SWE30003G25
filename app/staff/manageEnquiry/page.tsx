@@ -8,38 +8,35 @@ import {
   type Enquiry,
 } from '@/lib/enquiry'
 
-// Hardcoded vet list — replace with a real fetch from your users table
+// Replace with a real fetch from your users / veterinarian table
 const VETS = [
   { vetID: 'vet-uuid-1', name: 'Dr. Sarah Lim' },
   { vetID: 'vet-uuid-2', name: 'Dr. James Tan' },
 ]
 
-const STATUS_STYLES: Record<string, string> = {
-  pending:   'bg-yellow-100 text-yellow-800',
-  assigned:  'bg-blue-100   text-blue-800',
-  responded: 'bg-green-100  text-green-800',
+const STATUS_BADGE: Record<string, string> = {
+  pending:   'bg-amber-50  text-amber-800  border border-amber-200',
+  assigned:  'bg-blue-50   text-blue-800   border border-blue-200',
+  responded: 'bg-green-50  text-green-800  border border-green-200',
 }
 
 export default function StaffEnquiriesPage() {
   const [enquiries, setEnquiries] = useState<Enquiry[]>([])
-  const [loading, setLoading]     = useState(true)
-  const [selected, setSelected]   = useState<Enquiry | null>(null)
+  const [loading,   setLoading]   = useState(true)
+  const [selected,  setSelected]  = useState<Enquiry | null>(null)
 
-  // Form state
+  // form state
   const [directReply, setDirectReply] = useState('')
   const [selectedVet, setSelectedVet] = useState('')
-  const [submitting, setSubmitting]   = useState(false)
-  const [feedback, setFeedback]       = useState('')
+  const [submitting,  setSubmitting]  = useState(false)
+  const [feedback,    setFeedback]    = useState<{ msg: string; ok: boolean } | null>(null)
 
-  // ── load on mount ──────────────────────────────────────────────────────
-  useEffect(() => {
-    loadEnquiries()
-  }, [])
+  useEffect(() => { loadEnquiries() }, [])
 
   async function loadEnquiries() {
     setLoading(true)
     try {
-      const data = await viewEnquiry()  // Staff.viewEnquiry()
+      const data = await viewEnquiry()   // Staff.viewEnquiry()
       setEnquiries(data)
     } catch (e: any) {
       console.error(e.message)
@@ -48,151 +45,228 @@ export default function StaffEnquiriesPage() {
     }
   }
 
-  // ── assign enquiry to vet ──────────────────────────────────────────────
-  async function handleAssignEnquiryToVet() {
+  function selectEnquiry(enq: Enquiry) {
+    setSelected(enq)
+    setFeedback(null)
+    setDirectReply('')
+    setSelectedVet(enq.vetID ?? '')
+  }
+
+  // ── assign to vet ──────────────────────────────────────────────────────
+  async function handleAssign() {
     if (!selected || !selectedVet) return
     setSubmitting(true)
+    setFeedback(null)
     try {
-      const updated = await assignEnquiryToVet(selected.enquiryID, selectedVet) // Staff.assignEnquiryToVet()
-      setEnquiries(prev => prev.map(e => e.enquiryID === updated.enquiryID ? updated : e))
-      setSelected(updated)
-      setFeedback('Enquiry assigned to veterinarian.')
+      const updated = await assignEnquiryToVet(selected.enquiryID, selectedVet)  // Staff.assignEnquiryToVet()
+      syncEnquiry(updated)
+      setFeedback({ msg: 'Enquiry assigned to veterinarian.', ok: true })
     } catch (e: any) {
-      setFeedback('Error: ' + e.message)
+      setFeedback({ msg: 'Error: ' + e.message, ok: false })
     } finally {
       setSubmitting(false)
     }
   }
 
-  // ── staff replies directly ─────────────────────────────────────────────
-  async function handleRespondToEnquiry() {
+  // ── respond directly ───────────────────────────────────────────────────
+  async function handleRespond() {
     if (!selected || !directReply.trim()) return
     setSubmitting(true)
+    setFeedback(null)
     try {
-      const updated = await respondToEnquiry(selected.enquiryID, directReply) // Staff.respondToEnquiry()
-      setEnquiries(prev => prev.map(e => e.enquiryID === updated.enquiryID ? updated : e))
-      setSelected(updated)
+      const updated = await respondToEnquiry(selected.enquiryID, directReply)   // Staff.respondToEnquiry()
+      syncEnquiry(updated)
       setDirectReply('')
-      setFeedback('Response saved.')
+      setFeedback({ msg: 'Response saved. The enquiry status is now "responded" in Supabase — the pet owner will see it when they view their enquiry.', ok: true })
     } catch (e: any) {
-      setFeedback('Error: ' + e.message)
+      setFeedback({ msg: 'Error: ' + e.message, ok: false })
     } finally {
       setSubmitting(false)
     }
+  }
+
+  function syncEnquiry(updated: Enquiry) {
+    setEnquiries(prev => prev.map(e => e.enquiryID === updated.enquiryID ? updated : e))
+    setSelected(updated)
+  }
+
+  function vetName(id: string | null) {
+    return VETS.find(v => v.vetID === id)?.name ?? ''
+  }
+
+  function timeAgo(iso: string) {
+    const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
+    if (s < 60)    return 'just now'
+    if (s < 3600)  return `${Math.floor(s / 60)} min ago`
+    if (s < 86400) return `${Math.floor(s / 3600)} hr ago`
+    return `${Math.floor(s / 86400)} day ago`
   }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Manage Enquiries</h1>
+      <div className="max-w-5xl mx-auto">
 
-      <div className="flex gap-6">
-        {/* ── Left: enquiry list ── */}
-        <div className="w-1/2 space-y-3">
-          {loading && <p className="text-gray-500">Loading…</p>}
-
-          {!loading && enquiries.length === 0 && (
-            <p className="text-gray-400">No enquiries yet.</p>
-          )}
-
-          {enquiries.map(enq => (
-            <button
-              key={enq.enquiryID}
-              onClick={() => { setSelected(enq); setFeedback('') }}
-              className={`w-full text-left p-4 rounded-xl border transition-all
-                ${selected?.enquiryID === enq.enquiryID
-                  ? 'border-blue-500 bg-white shadow-md'
-                  : 'border-gray-200 bg-white hover:border-blue-300'}`}
-            >
-              <div className="flex items-start justify-between">
-                <p className="font-semibold text-gray-800">{enq.subject}</p>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_STYLES[enq.status]}`}>
-                  {enq.status}
-                </span>
-              </div>
-              <p className="text-sm text-gray-500 mt-1 line-clamp-2">{enq.message}</p>
-              <p className="text-xs text-gray-400 mt-2">
-                {new Date(enq.created_at).toLocaleString()}
-              </p>
-            </button>
-          ))}
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Manage Enquiries</h1>
+            <p className="text-sm text-gray-500 mt-0.5">Respond to or assign pet owner enquiries</p>
+          </div>
+          <button
+            onClick={loadEnquiries}
+            className="text-sm text-gray-500 hover:text-gray-800 flex items-center gap-1.5 border border-gray-200 rounded-lg px-3 py-1.5 bg-white hover:bg-gray-50 transition-colors"
+          >
+            ↻ Refresh
+          </button>
         </div>
 
-        {/* ── Right: action panel ── */}
-        {selected && (
-          <div className="w-1/2 bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-5 self-start">
-            <div>
-              <h2 className="text-lg font-bold text-gray-900">{selected.subject}</h2>
-              <p className="text-gray-600 mt-2">{selected.message}</p>
-            </div>
+        <div className="flex gap-5">
+          {/* ── Left: list ── */}
+          <div className="w-5/12 space-y-2 shrink-0">
+            {loading && (
+              <div className="text-sm text-gray-400 py-8 text-center">Loading…</div>
+            )}
+            {!loading && enquiries.length === 0 && (
+              <div className="text-sm text-gray-400 py-8 text-center">No enquiries yet.</div>
+            )}
+            {enquiries.map(enq => (
+              <button
+                key={enq.enquiryID}
+                onClick={() => selectEnquiry(enq)}
+                className={`w-full text-left p-4 rounded-xl border bg-white transition-all
+                  ${selected?.enquiryID === enq.enquiryID
+                    ? 'border-blue-500 ring-1 ring-blue-200 shadow-sm'
+                    : 'border-gray-200 hover:border-blue-300 hover:shadow-sm'
+                  }`}
+              >
+                <div className="flex items-start justify-between gap-2 mb-1">
+                  <p className="font-semibold text-gray-800 text-sm leading-snug">{enq.subject}</p>
+                  <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium whitespace-nowrap shrink-0 ${STATUS_BADGE[enq.status]}`}>
+                    {enq.status}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 line-clamp-2 mb-2">{enq.message}</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] text-gray-400">{timeAgo(enq.created_at)}</p>
+                  {enq.vetID && (
+                    <p className="text-[11px] text-blue-600">→ {vetName(enq.vetID)}</p>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
 
-            {selected.response && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <p className="text-xs font-semibold text-green-700 mb-1">Response</p>
-                <p className="text-sm text-green-900">{selected.response}</p>
+          {/* ── Right: actions ── */}
+          <div className="flex-1 min-w-0">
+            {!selected ? (
+              <div className="bg-white border border-gray-200 rounded-2xl h-64 flex flex-col items-center justify-center gap-2">
+                <span className="text-3xl opacity-20">💬</span>
+                <p className="text-sm text-gray-400">Select an enquiry to view actions</p>
+              </div>
+            ) : (
+              <div className="bg-white border border-gray-200 rounded-2xl shadow-sm divide-y divide-gray-100">
+
+                {/* Enquiry detail */}
+                <div className="p-5">
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <h2 className="text-base font-bold text-gray-900">{selected.subject}</h2>
+                    <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium shrink-0 ${STATUS_BADGE[selected.status]}`}>
+                      {selected.status}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 leading-relaxed">{selected.message}</p>
+                  {selected.vetID && (
+                    <p className="text-xs text-blue-600 mt-2">Assigned to {vetName(selected.vetID)}</p>
+                  )}
+                </div>
+
+                {/* Existing response */}
+                {selected.response && (
+                  <div className="p-5">
+                    <p className="text-xs font-semibold text-green-700 mb-1.5">✓ Response sent</p>
+                    <p className="text-sm text-gray-700 leading-relaxed bg-green-50 border border-green-100 rounded-lg p-3">
+                      {selected.response}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-2">
+                      This is what the pet owner sees when they view their enquiry in Supabase.
+                    </p>
+                  </div>
+                )}
+
+                {selected.status !== 'responded' && (
+                  <>
+                    {/* Assign to vet */}
+                    <div className="p-5">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                        Assign to veterinarian
+                      </p>
+                      <p className="text-xs text-gray-400 mb-3">
+                        Use this when the enquiry needs professional advice. The vet will respond directly.
+                      </p>
+                      <div className="flex gap-2">
+                        <select
+                          value={selectedVet}
+                          onChange={e => setSelectedVet(e.target.value)}
+                          disabled={selected.status === 'assigned' || submitting}
+                          className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100"
+                        >
+                          <option value="">Select a vet…</option>
+                          {VETS.map(v => (
+                            <option key={v.vetID} value={v.vetID}>{v.name}</option>
+                          ))}
+                        </select>
+                        <button
+                          onClick={handleAssign}
+                          disabled={!selectedVet || submitting || selected.status === 'assigned'}
+                          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-40 transition-colors whitespace-nowrap"
+                        >
+                          {submitting ? 'Assigning…' : 'Assign'}
+                        </button>
+                      </div>
+                      {selected.status === 'assigned' && (
+                        <p className="text-xs text-blue-500 mt-2">⏳ Awaiting vet response…</p>
+                      )}
+                    </div>
+
+                    {/* Direct reply */}
+                    <div className="p-5">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                        Respond directly
+                      </p>
+                      <p className="text-xs text-gray-400 mb-3">
+                        For general enquiries that don't need a vet. Your response is saved to the
+                        <code className="mx-1 px-1 bg-gray-100 rounded text-[11px]">response</code>
+                        column in Supabase and status flips to <strong>responded</strong>.
+                      </p>
+                      <textarea
+                        rows={4}
+                        value={directReply}
+                        onChange={e => setDirectReply(e.target.value)}
+                        disabled={submitting}
+                        placeholder="Type your response…"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100"
+                      />
+                      <button
+                        onClick={handleRespond}
+                        disabled={!directReply.trim() || submitting}
+                        className="mt-2 w-full bg-gray-900 text-white py-2 rounded-lg text-sm font-medium hover:bg-black disabled:opacity-40 transition-colors"
+                      >
+                        {submitting ? 'Sending…' : 'Send response'}
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {/* Feedback */}
+                {feedback && (
+                  <div className={`px-5 py-3 text-sm font-medium rounded-b-2xl ${feedback.ok ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                    {feedback.ok ? '✓' : '✗'} {feedback.msg}
+                  </div>
+                )}
               </div>
             )}
-
-            {selected.status !== 'responded' && (
-              <>
-                {/* Assign to vet */}
-                <div className="border-t pt-4">
-                  <p className="text-sm font-semibold text-gray-700 mb-2">
-                    Assign to Veterinarian (if professional advice needed)
-                  </p>
-                  <div className="flex gap-2">
-                    <select
-                      value={selectedVet}
-                      onChange={e => setSelectedVet(e.target.value)}
-                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    >
-                      <option value="">Select a vet…</option>
-                      {VETS.map(v => (
-                        <option key={v.vetID} value={v.vetID}>{v.name}</option>
-                      ))}
-                    </select>
-                    <button
-                      onClick={handleAssignEnquiryToVet}
-                      disabled={!selectedVet || submitting}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium
-                        hover:bg-blue-700 disabled:opacity-40 transition-colors"
-                    >
-                      Assign
-                    </button>
-                  </div>
-                </div>
-
-                {/* Direct reply */}
-                <div className="border-t pt-4">
-                  <p className="text-sm font-semibold text-gray-700 mb-2">
-                    Respond Directly (general enquiry)
-                  </p>
-                  <textarea
-                    rows={4}
-                    value={directReply}
-                    onChange={e => setDirectReply(e.target.value)}
-                    placeholder="Type your response…"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none
-                      focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  />
-                  <button
-                    onClick={handleRespondToEnquiry}
-                    disabled={!directReply.trim() || submitting}
-                    className="mt-2 w-full bg-gray-800 text-white py-2 rounded-lg text-sm font-medium
-                      hover:bg-gray-900 disabled:opacity-40 transition-colors"
-                  >
-                    Send Response
-                  </button>
-                </div>
-              </>
-            )}
-
-            {feedback && (
-              <p className={`text-sm font-medium ${feedback.startsWith('Error') ? 'text-red-600' : 'text-green-600'}`}>
-                {feedback}
-              </p>
-            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   )

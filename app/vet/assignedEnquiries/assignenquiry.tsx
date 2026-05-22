@@ -6,28 +6,26 @@ import {
   respondAssignedEnquiry,
   type Enquiry,
 } from '@/lib/enquiry'
-import supabase from '@/lib/supabase'
+
+// Replace with real auth — get the logged-in vet's ID from your auth session
+const VET_ID = 'vet-uuid-1'
 
 export default function AssignedEnquiriesPage() {
-  const [enquiries, setEnquiries]   = useState<Enquiry[]>([])
-  const [loading, setLoading]       = useState(true)
-  const [selected, setSelected]     = useState<Enquiry | null>(null)
-  const [response, setResponse]     = useState('')
+  const [enquiries, setEnquiries] = useState<Enquiry[]>([])
+  const [loading, setLoading]     = useState(true)
+  const [selected, setSelected]   = useState<Enquiry | null>(null)
+  const [response, setResponse]   = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [feedback, setFeedback]     = useState('')
+  const [feedback, setFeedback]   = useState('')
 
   useEffect(() => {
-    async function init() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) loadEnquiries(user.id)
-    }
-    init()
+    loadEnquiries()
   }, [])
 
-  async function loadEnquiries(vetID: string) {
+  async function loadEnquiries() {
     setLoading(true)
     try {
-      const data = await viewAssignedEnquiry(vetID)
+      const data = await viewAssignedEnquiry(VET_ID)  // Veterinarian.viewAssignedEnquiry()
       setEnquiries(data)
     } catch (e: any) {
       console.error(e.message)
@@ -41,7 +39,7 @@ export default function AssignedEnquiriesPage() {
     setSubmitting(true)
     setFeedback('')
     try {
-      const updated = await respondAssignedEnquiry(selected.enquiryID, response)
+      const updated = await respondAssignedEnquiry(selected.enquiryID, response)  // Veterinarian.respondAssignedEnquiry()
       setEnquiries(prev => prev.map(e => e.enquiryID === updated.enquiryID ? updated : e))
       setSelected(updated)
       setResponse('')
@@ -66,10 +64,9 @@ export default function AssignedEnquiriesPage() {
             <p className="text-gray-400">No enquiries assigned to you yet.</p>
           )}
 
-          {enquiries.map((enq, idx) => (
+          {enquiries.map(enq => (
             <button
-              key={enq.enquiryID || `enq-${idx}`}
-              type="button"
+              key={enq.enquiryID}
               onClick={() => { setSelected(enq); setFeedback('') }}
               className={`w-full text-left p-4 rounded-xl border transition-all
                 ${selected?.enquiryID === enq.enquiryID
@@ -122,7 +119,6 @@ export default function AssignedEnquiriesPage() {
                     focus:outline-none focus:ring-2 focus:ring-blue-400"
                 />
                 <button
-                  type="button"
                   onClick={handleRespondAssignedEnquiry}
                   disabled={!response.trim() || submitting}
                   className="mt-3 w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-medium

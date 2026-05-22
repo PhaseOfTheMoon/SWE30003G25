@@ -7,26 +7,32 @@ import {
   rejectContent,
   type ContentReview,
 } from '@/lib/content'
-
-// Replace with real auth — get the logged-in vet's ID from your auth session
-const VET_ID = 'vet-uuid-1'
+import supabase from '@/lib/supabase'
 
 export default function ValidateContentPage() {
-  const [reviews, setReviews]     = useState<ContentReview[]>([])
-  const [loading, setLoading]     = useState(true)
-  const [selected, setSelected]   = useState<ContentReview | null>(null)
-  const [comment, setComment]     = useState('')
+  const [vetUserID, setVetUserID] = useState<string | null>(null)
+  const [reviews, setReviews]       = useState<ContentReview[]>([])
+  const [loading, setLoading]       = useState(true)
+  const [selected, setSelected]     = useState<ContentReview | null>(null)
+  const [comment, setComment]       = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [feedback, setFeedback]   = useState('')
+  const [feedback, setFeedback]     = useState('')
 
   useEffect(() => {
-    loadPendingContent()
+    async function init() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setVetUserID(user.id)
+        loadPendingContent(user.id)
+      }
+    }
+    init()
   }, [])
 
-  async function loadPendingContent() {
+  async function loadPendingContent(vetID: string) {
     setLoading(true)
     try {
-      const data = await viewPendingContent(VET_ID)  // Veterinarian.viewPendingContent()
+      const data = await viewPendingContent(vetID)
       setReviews(data)
     } catch (e: any) {
       console.error(e.message)
@@ -40,7 +46,7 @@ export default function ValidateContentPage() {
     setSubmitting(true)
     setFeedback('')
     try {
-      const updated = await validateContent(selected.reviewID, comment)  // Veterinarian.validateContent()
+      const updated = await validateContent(selected.reviewID, comment)
       updateReviewInList(updated)
       setFeedback('Content validated successfully.')
     } catch (e: any) {
@@ -55,7 +61,7 @@ export default function ValidateContentPage() {
     setSubmitting(true)
     setFeedback('')
     try {
-      const updated = await rejectContent(selected.reviewID, comment)    // Veterinarian.rejectContent()
+      const updated = await rejectContent(selected.reviewID, comment)
       updateReviewInList(updated)
       setFeedback('Content rejected. Staff will be notified.')
     } catch (e: any) {
@@ -82,7 +88,7 @@ export default function ValidateContentPage() {
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Validate Content</h1>
 
       <div className="flex gap-6">
-        {/* ── Left: pending reviews list ── */}
+        {/* ── Left: reviews list ── */}
         <div className="w-1/2 space-y-3">
           {loading && <p className="text-gray-500">Loading…</p>}
 
@@ -90,14 +96,14 @@ export default function ValidateContentPage() {
             <p className="text-gray-400">No content pending review.</p>
           )}
 
-          {reviews.map(review => {
-            // review includes joined first_aid_content and guide from viewPendingContent()
+          {reviews.map((review, idx) => {
             const content = (review as any).first_aid_content
             const guide   = (review as any).guide?.[0]
 
             return (
               <button
-                key={review.reviewID}
+                key={review.reviewID || `review-${idx}`}
+                type="button"
                 onClick={() => { setSelected(review); setFeedback('') }}
                 className={`w-full text-left p-4 rounded-xl border transition-all
                   ${selected?.reviewID === review.reviewID
@@ -130,7 +136,6 @@ export default function ValidateContentPage() {
         {/* ── Right: review panel ── */}
         {selected && (
           <div className="w-1/2 bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-5 self-start">
-            {/* Content details */}
             {(() => {
               const content = (selected as any).first_aid_content
               const guides  = (selected as any).guide ?? []
@@ -145,12 +150,11 @@ export default function ValidateContentPage() {
                     </p>
                   </div>
 
-                  {/* Guide steps */}
                   {guides.length > 0 && (
                     <div className="bg-gray-50 rounded-lg p-4 space-y-3">
                       <p className="text-sm font-semibold text-gray-700">Guide Steps</p>
-                      {guides.map((g: any) => (
-                        <div key={g.guideID} className="flex gap-3">
+                      {guides.map((g: any, gi: number) => (
+                        <div key={g.guideID || `guide-${gi}`} className="flex gap-3">
                           <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs
                             font-bold flex items-center justify-center shrink-0">
                             {g.stepNumber}
@@ -167,7 +171,6 @@ export default function ValidateContentPage() {
               )
             })()}
 
-            {/* Already reviewed */}
             {selected.status !== 'pending' && (
               <div className={`rounded-lg p-4 border
                 ${selected.status === 'validated'
@@ -183,7 +186,6 @@ export default function ValidateContentPage() {
               </div>
             )}
 
-            {/* Validate / reject form */}
             {selected.status === 'pending' && (
               <div className="border-t pt-4 space-y-3">
                 <p className="text-sm font-semibold text-gray-700">Your Review Comment</p>
@@ -197,6 +199,7 @@ export default function ValidateContentPage() {
                 />
                 <div className="flex gap-3">
                   <button
+                    type="button"
                     onClick={handleValidateContent}
                     disabled={!comment.trim() || submitting}
                     className="flex-1 bg-green-600 text-white py-2 rounded-lg text-sm font-medium
@@ -205,6 +208,7 @@ export default function ValidateContentPage() {
                     {submitting ? 'Saving…' : '✓ Validate'}
                   </button>
                   <button
+                    type="button"
                     onClick={handleRejectContent}
                     disabled={!comment.trim() || submitting}
                     className="flex-1 bg-red-600 text-white py-2 rounded-lg text-sm font-medium

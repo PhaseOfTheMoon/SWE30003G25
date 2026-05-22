@@ -94,7 +94,7 @@ export default function StaffDashboardPage() {
         <StatCard icon="📨" label="Pending Enquiries" value={stats.pendingEnquiries} sub="Awaiting assignment or reply" href="/staff/manageEnquiry" accent />
         <StatCard icon="🔗" label="Assigned to Vet" value={stats.assignedEnquiries} sub="Waiting on vet response" href="/staff/manageEnquiry" />
         <StatCard icon="✅" label="Responded" value={stats.respondedEnquiries} sub="Enquiries closed" href="/staff/manageEnquiry" />
-        <StatCard icon="🕐" label="Pending Reviews" value={stats.pendingReviews} sub="Awaiting vet validation" href="/staff/manageContent" accent />
+        <StatCard icon="🕐" label="Pending Reviews" value={stats.pendingReviews} sub="Awaiting vet validation" href="/staff/pendingReview" accent />
         <StatCard icon="📚" label="Published Content" value={stats.publishedContent} sub="Guides live for pet owners" href="/staff/manageContent" />
       </div>
 
