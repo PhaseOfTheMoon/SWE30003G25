@@ -8,11 +8,7 @@ import {
   type Enquiry,
 } from '@/lib/enquiry'
 
-// Replace with a real fetch from your users / veterinarian table
-const VETS = [
-  { vetID: 'vet-uuid-1', name: 'Dr. Sarah Lim' },
-  { vetID: 'vet-uuid-2', name: 'Dr. James Tan' },
-]
+import supabase from '@/lib/supabase'
 
 const STATUS_BADGE: Record<string, string> = {
   pending:   'bg-amber-50  text-amber-800  border border-amber-200',
@@ -22,6 +18,7 @@ const STATUS_BADGE: Record<string, string> = {
 
 export default function StaffEnquiriesPage() {
   const [enquiries, setEnquiries] = useState<Enquiry[]>([])
+  const [vets,      setVets]      = useState<{ vetID: string; name: string }[]>([])
   const [loading,   setLoading]   = useState(true)
   const [selected,  setSelected]  = useState<Enquiry | null>(null)
 
@@ -31,7 +28,19 @@ export default function StaffEnquiriesPage() {
   const [submitting,  setSubmitting]  = useState(false)
   const [feedback,    setFeedback]    = useState<{ msg: string; ok: boolean } | null>(null)
 
-  useEffect(() => { loadEnquiries() }, [])
+  useEffect(() => {
+    loadEnquiries()
+    loadVets()
+  }, [])
+
+  async function loadVets() {
+    const { data } = await supabase
+      .from('veterinarian')
+      .select('id, profiles(name)')
+    if (data) {
+      setVets(data.map((v: any) => ({ vetID: v.id, name: v.profiles?.name ?? 'Unknown' })))
+    }
+  }
 
   async function loadEnquiries() {
     setLoading(true)
@@ -91,7 +100,7 @@ export default function StaffEnquiriesPage() {
   }
 
   function vetName(id: string | null) {
-    return VETS.find(v => v.vetID === id)?.name ?? ''
+    return vets.find(v => v.vetID === id)?.name ?? ''
   }
 
   function timeAgo(iso: string) {
@@ -211,7 +220,7 @@ export default function StaffEnquiriesPage() {
                           className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100"
                         >
                           <option value="">Select a vet…</option>
-                          {VETS.map(v => (
+                          {vets.map(v => (
                             <option key={v.vetID} value={v.vetID}>{v.name}</option>
                           ))}
                         </select>
