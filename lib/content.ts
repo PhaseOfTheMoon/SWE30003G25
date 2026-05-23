@@ -377,16 +377,13 @@ export async function resubmitContent(
 
 // ── Vet-side functions (unchanged) ────────────────────────────────────────
 
-export async function viewPendingContent(authUID: string): Promise<ContentReview[]> {
-  // content_review.vetID stores the veterinarian table's PK, not the auth UUID.
-  // First resolve the veterinarian row that belongs to the logged-in user.
+async function resolveVetPK(authUID: string): Promise<string> {
   const { data: vetRow } = await supabase
     .from('veterinarian')
     .select('id')
     .eq('id', authUID)
     .single()
 
-  // If no direct match, try matching via a profileID foreign key column
   let vetPK: string | null = vetRow?.id ?? null
   if (!vetPK) {
     const { data: vetByProfile } = await supabase
@@ -398,12 +395,28 @@ export async function viewPendingContent(authUID: string): Promise<ContentReview
   }
 
   if (!vetPK) throw new Error('Veterinarian record not found for this user.')
+  return vetPK
+}
 
+export async function viewPendingContent(authUID: string): Promise<ContentReview[]> {
+  const vetPK = await resolveVetPK(authUID)
   const { data, error } = await supabase
     .from('content_review')
     .select('*, first_aid_content(*, guide(*))')
     .eq('vetID', vetPK)
     .eq('status', 'pending')
+
+  if (error) throw new Error(error.message)
+  return data ?? []
+}
+
+export async function viewAllVetContent(authUID: string): Promise<ContentReview[]> {
+  const vetPK = await resolveVetPK(authUID)
+  const { data, error } = await supabase
+    .from('content_review')
+    .select('*, first_aid_content(*, guide(*))')
+    .eq('vetID', vetPK)
+    .order('reviewedDate', { ascending: false })
 
   if (error) throw new Error(error.message)
   return data ?? []

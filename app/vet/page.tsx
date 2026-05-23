@@ -82,9 +82,9 @@ export default function VetDashboardPage() {
       // Fetch vet's enquiry counts
       const { data: enquiries } = await supabase
         .from("enquiry")
-        .select("enquiryID, subject, status, createdAt")
+        .select("enquiryID, subject, status, created_at")
         .eq("vetID", user.id)
-        .order("createdAt", { ascending: false });
+        .order("created_at", { ascending: false });
 
       if (enquiries) {
         setStats(prev => ({
@@ -96,7 +96,7 @@ export default function VetDashboardPage() {
           enquiries.slice(0, 3).map(e => ({
             subject: e.subject,
             status:  e.status,
-            time:    new Date(e.createdAt).toLocaleString(),
+            time:    new Date(e.created_at).toLocaleString(),
           }))
         );
       }
@@ -145,9 +145,9 @@ export default function VetDashboardPage() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginBottom: "32px" }}>
         <StatCard icon="💬" label="Assigned Enquiries"  value={stats.assignedEnquiries}  sub="Awaiting your response"       href="/vet/assignedEnquiries" accent />
         <StatCard icon="✅" label="Enquiries Responded" value={stats.respondedEnquiries} sub="Replied to pet owners"         href="/vet/assignedEnquiries" />
-        <StatCard icon="🔬" label="Pending Reviews"     value={stats.pendingReviews}     sub="Content awaiting validation"  href="/vet/validateContent"   accent />
-        <StatCard icon="✔️" label="Validated Content"   value={stats.validatedContent}   sub="Guides approved by you"       href="/vet/validateContent" />
-        <StatCard icon="✖️" label="Rejected Content"    value={stats.rejectedContent}    sub="Sent back for revision"       href="/vet/validateContent" />
+        <StatCard icon="🔬" label="Pending Reviews"     value={stats.pendingReviews}     sub="Content awaiting validation"  href="/vet/validateContent?status=pending"   accent />
+        <StatCard icon="✔️" label="Validated Content"   value={stats.validatedContent}   sub="Guides approved by you"       href="/vet/validateContent?status=validated" />
+        <StatCard icon="✖️" label="Rejected Content"    value={stats.rejectedContent}    sub="Sent back for revision"       href="/vet/validateContent?status=rejected" />
       </div>
 
       {/* Quick actions */}

@@ -1,15 +1,21 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import {
-  viewPendingContent,
+  viewAllVetContent,
   validateContent,
   rejectContent,
   type ContentReview,
 } from '@/lib/content'
+import supabase from '@/lib/supabase'
 
 export default function ValidateContentPage() {
+  const searchParams = useSearchParams()
+  const initialTab = (searchParams.get('status') ?? 'pending') as 'pending' | 'validated' | 'rejected'
+
   const [reviews, setReviews]       = useState<ContentReview[]>([])
+  const [tab, setTab]               = useState<'pending' | 'validated' | 'rejected'>(initialTab)
   const [loading, setLoading]       = useState(true)
   const [selected, setSelected]     = useState<ContentReview | null>(null)
   const [comment, setComment]       = useState('')
@@ -17,10 +23,16 @@ export default function ValidateContentPage() {
   const [feedback, setFeedback]     = useState('')
 
 
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) loadPendingContent(data.user.id)
+    })
+  }, [])
+
   async function loadPendingContent(vetID: string) {
     setLoading(true)
     try {
-      const data = await viewPendingContent(vetID)
+      const data = await viewAllVetContent(vetID)
       setReviews(data)
     } catch (e: any) {
       console.error(e.message)
@@ -28,6 +40,8 @@ export default function ValidateContentPage() {
       setLoading(false)
     }
   }
+
+  const filtered = reviews.filter(r => r.status === tab)
 
   async function handleValidateContent() {
     if (!selected || !comment.trim()) return
@@ -75,16 +89,36 @@ export default function ValidateContentPage() {
     <div className="min-h-screen bg-gray-50 p-6">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Validate Content</h1>
 
+      {/* ── Tabs ── */}
+      <div className="flex gap-2 mb-4">
+        {(['pending', 'validated', 'rejected'] as const).map(s => (
+          <button
+            key={s}
+            type="button"
+            onClick={() => { setTab(s); setSelected(null) }}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors
+              ${tab === s
+                ? s === 'pending'   ? 'bg-yellow-100 border-yellow-400 text-yellow-800'
+                : s === 'validated' ? 'bg-green-100  border-green-400  text-green-800'
+                :                    'bg-red-100    border-red-400    text-red-800'
+                : 'bg-white border-gray-200 text-gray-500 hover:border-gray-400'}`}
+          >
+            {s.charAt(0).toUpperCase() + s.slice(1)}
+            <span className="ml-1.5 text-xs">({reviews.filter(r => r.status === s).length})</span>
+          </button>
+        ))}
+      </div>
+
       <div className="flex gap-6">
         {/* ── Left: reviews list ── */}
         <div className="w-1/2 space-y-3">
           {loading && <p className="text-gray-500">Loading…</p>}
 
-          {!loading && reviews.length === 0 && (
-            <p className="text-gray-400">No content pending review.</p>
+          {!loading && filtered.length === 0 && (
+            <p className="text-gray-400">No {tab} content.</p>
           )}
 
-          {reviews.map((review, idx) => {
+          {filtered.map((review, idx) => {
             const content = (review as any).first_aid_content
             const guide   = (review as any).guide?.[0]
 

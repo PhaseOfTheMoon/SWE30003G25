@@ -6,9 +6,7 @@ import {
   respondAssignedEnquiry,
   type Enquiry,
 } from '@/lib/enquiry'
-
-// Replace with real auth — get the logged-in vet's ID from your auth session
-const VET_ID = 'vet-uuid-1'
+import supabase from '@/lib/supabase'
 
 export default function AssignedEnquiriesPage() {
   const [enquiries, setEnquiries] = useState<Enquiry[]>([])
@@ -19,13 +17,15 @@ export default function AssignedEnquiriesPage() {
   const [feedback, setFeedback]   = useState('')
 
   useEffect(() => {
-    loadEnquiries()
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) loadEnquiries(data.user.id)
+    })
   }, [])
 
-  async function loadEnquiries() {
+  async function loadEnquiries(vetID: string) {
     setLoading(true)
     try {
-      const data = await viewAssignedEnquiry(VET_ID)  // Veterinarian.viewAssignedEnquiry()
+      const data = await viewAssignedEnquiry(vetID)  // Veterinarian.viewAssignedEnquiry()
       setEnquiries(data)
     } catch (e: any) {
       console.error(e.message)
