@@ -7,10 +7,8 @@ import {
   rejectContent,
   type ContentReview,
 } from '@/lib/content'
-import supabase from '@/lib/supabase'
 
 export default function ValidateContentPage() {
-  const [vetUserID, setVetUserID] = useState<string | null>(null)
   const [reviews, setReviews]       = useState<ContentReview[]>([])
   const [loading, setLoading]       = useState(true)
   const [selected, setSelected]     = useState<ContentReview | null>(null)
@@ -18,16 +16,6 @@ export default function ValidateContentPage() {
   const [submitting, setSubmitting] = useState(false)
   const [feedback, setFeedback]     = useState('')
 
-  useEffect(() => {
-    async function init() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setVetUserID(user.id)
-        loadPendingContent(user.id)
-      }
-    }
-    init()
-  }, [])
 
   async function loadPendingContent(vetID: string) {
     setLoading(true)
