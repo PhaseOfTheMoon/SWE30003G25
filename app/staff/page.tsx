@@ -2,12 +2,7 @@
 
 import DashboardLayout from "@/components/dashboardLayout";
 import Link from "next/link";
-
-const STAFF_NAV = [
-  { label: "Dashboard", href: "/staff",icon: "🏠" },
-  { label: "Manage Enquiries", href: "/staff/manageEnquiry", icon: "💬" },
-  { label: "Manage Content", href: "/staff/manageContent",   icon: "📋" },
-];
+import { STAFF_NAV } from '@/app/components/sidebar'
 
 type StatCardProps = {
   icon:    string;

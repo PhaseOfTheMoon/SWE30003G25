@@ -8,13 +8,7 @@ import {
   type ContentReview,
 } from '@/lib/content'
 import supabase from '@/lib/supabase'
-
-const STAFF_NAV = [
-  { label: 'Dashboard',        href: '/staff',                icon: '🏠' },
-  { label: 'Manage Enquiries', href: '/staff/manageEnquiry',  icon: '💬' },
-  { label: 'Manage Content',   href: '/staff/manageContent',  icon: '📋' },
-  { label: 'Pending Review',   href: '/staff/pendingReview',  icon: '🔬' },
-]
+import { STAFF_NAV } from '@/app/components/sidebar'
 
 type EditDraft = {
   title:       string
@@ -130,7 +124,7 @@ export default function StaffPendingReviewPage() {
         }}>
           <span style={{ fontSize: '18px' }}>✖️</span>
           <p style={{ fontSize: '14px', color: '#9f1239', margin: 0, fontWeight: '500' }}>
-            <strong>{counts.rejected} guide{counts.rejected !== 1 ? 's' : ''}</strong> were rejected by the vet and need revision.
+            <strong>{counts.rejected} item{counts.rejected !== 1 ? 's' : ''}</strong> were rejected by the vet and need revision.
           </p>
         </div>
       )}
@@ -188,7 +182,10 @@ export default function StaffPendingReviewPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {filtered.map((review, idx) => {
             const content  = (review as any).first_aid_content
-            const guides   = (review as any).guide ?? []
+            const guides   = (review as any).guide              ?? []
+            const quizzes  = (review as any).quiz               ?? []
+            const videos   = (review as any).educational_video  ?? []
+            const contentType = guides.length > 0 ? 'Guide' : quizzes.length > 0 ? 'Quiz' : videos.length > 0 ? 'Video' : null
             const meta     = STATUS_META[review.status] ?? STATUS_META.pending
             const isOpen   = expanded === review.reviewID
             const isEditing = editing === review.reviewID
@@ -233,11 +230,23 @@ export default function StaffPendingReviewPage() {
                       <p style={{ fontSize: '15px', fontWeight: '700', color: '#111827', margin: '0 0 4px' }}>
                         {content?.petType} — {content?.emergencyCategory}
                       </p>
-                      {guides[0]?.title && (
-                        <p style={{ fontSize: '13px', color: '#6b7280', margin: '0 0 4px' }}>
-                          {guides[0].title}
-                        </p>
-                      )}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                        {contentType && (
+                          <span style={{
+                            fontSize: '10px', fontWeight: '700', padding: '2px 7px',
+                            borderRadius: '999px',
+                            backgroundColor: contentType === 'Guide' ? '#dbeafe' : contentType === 'Quiz' ? '#ede9fe' : '#ffedd5',
+                            color:           contentType === 'Guide' ? '#1d4ed8' : contentType === 'Quiz' ? '#6d28d9' : '#c2410c',
+                          }}>
+                            {contentType === 'Guide' ? '📋' : contentType === 'Quiz' ? '🧠' : '🎬'} {contentType}
+                          </span>
+                        )}
+                        {(guides[0]?.title || quizzes[0]?.title || videos[0]?.title) && (
+                          <p style={{ fontSize: '13px', color: '#6b7280', margin: 0 }}>
+                            {guides[0]?.title ?? quizzes[0]?.title ?? videos[0]?.title}
+                          </p>
+                        )}
+                      </div>
 
                       {/* Date */}
                       {review.reviewedDate && (
@@ -271,35 +280,114 @@ export default function StaffPendingReviewPage() {
                 {isOpen && (
                   <div style={{ borderTop: '1px solid #f3f4f6' }}>
 
-                    {/* Guide steps — read-only view (or edit form if rejected+editing) */}
+                    {/* Guide Steps — read-only view (or edit form if rejected+editing) */}
                     <div style={{ padding: '16px 20px', backgroundColor: '#fafafa' }}>
                       {!isEditing ? (
                         <>
-                          <p style={{ fontSize: '12px', fontWeight: '700', color: '#374151', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                            Guide Steps
-                          </p>
-                          {guides.length === 0 ? (
-                            <p style={{ fontSize: '13px', color: '#9ca3af' }}>No steps recorded.</p>
-                          ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                              {guides.map((g: any, gi: number) => (
-                                <div key={g.guideID ?? `guide-${gi}`} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                                  <span style={{
-                                    width: '22px', height: '22px', borderRadius: '50%',
-                                    backgroundColor: '#dbeafe', color: '#1d4ed8',
-                                    fontSize: '11px', fontWeight: '700',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    flexShrink: 0, marginTop: '1px',
-                                  }}>
-                                    {g.stepNumber}
-                                  </span>
-                                  <div>
-                                    <p style={{ fontSize: '13px', fontWeight: '600', color: '#111827', margin: '0 0 2px' }}>{g.title}</p>
-                                    <p style={{ fontSize: '13px', color: '#6b7280', margin: 0, lineHeight: '1.6' }}>{g.instruction}</p>
+                          {/* ── Guide Steps ── */}
+                          {guides.length > 0 && (
+                            <>
+                              <p style={{ fontSize: '12px', fontWeight: '700', color: '#374151', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                📋 Guide Steps
+                              </p>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
+                                {guides.map((g: any, gi: number) => (
+                                  <div key={g.guideID ?? `guide-${gi}`} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                                    <span style={{
+                                      width: '22px', height: '22px', borderRadius: '50%',
+                                      backgroundColor: '#dbeafe', color: '#1d4ed8',
+                                      fontSize: '11px', fontWeight: '700',
+                                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                      flexShrink: 0, marginTop: '1px',
+                                    }}>
+                                      {g.stepNumber}
+                                    </span>
+                                    <div>
+                                      <p style={{ fontSize: '13px', fontWeight: '600', color: '#111827', margin: '0 0 2px' }}>{g.title}</p>
+                                      <p style={{ fontSize: '13px', color: '#6b7280', margin: 0, lineHeight: '1.6' }}>{g.instruction}</p>
+                                      {g.videoUrl && (
+                                        <a href={g.videoUrl} target="_blank" rel="noopener noreferrer"
+                                          style={{ fontSize: '12px', color: '#3b82f6', marginTop: '4px', display: 'inline-block' }}>
+                                          Watch demo ↗
+                                        </a>
+                                      )}
+                                    </div>
                                   </div>
+                                ))}
+                              </div>
+                            </>
+                          )}
+
+                          {/* ── Educational Videos ── */}
+                          {videos.length > 0 && (
+                            <>
+                              <p style={{ fontSize: '12px', fontWeight: '700', color: '#374151', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                🎬 Educational Videos
+                              </p>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
+                                {videos.map((v: any, vi: number) => (
+                                  <div key={v.videoID ?? `video-${vi}`} style={{
+                                    backgroundColor: '#fff7ed', border: '1px solid #fed7aa',
+                                    borderRadius: '6px', padding: '12px',
+                                  }}>
+                                    <p style={{ fontSize: '13px', fontWeight: '600', color: '#111827', margin: '0 0 4px' }}>{v.title}</p>
+                                    {v.description && (
+                                      <p style={{ fontSize: '13px', color: '#6b7280', margin: '0 0 6px', lineHeight: '1.6' }}>{v.description}</p>
+                                    )}
+                                    {v.videoUrl && (
+                                      <a href={v.videoUrl} target="_blank" rel="noopener noreferrer"
+                                        style={{ fontSize: '12px', color: '#3b82f6' }}>
+                                        Watch video ↗
+                                      </a>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </>
+                          )}
+
+                          {/* ── Quiz ── */}
+                          {quizzes.length > 0 && (
+                            <>
+                              <p style={{ fontSize: '12px', fontWeight: '700', color: '#374151', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                🧠 Quiz
+                              </p>
+                              {quizzes.map((q: any, qi: number) => (
+                                <div key={q.quizID ?? `quiz-${qi}`} style={{ marginBottom: '12px' }}>
+                                  <p style={{ fontSize: '13px', fontWeight: '600', color: '#111827', margin: '0 0 10px' }}>{q.title}</p>
+                                  {(q.questions ?? []).map((ques: any, quesI: number) => (
+                                    <div key={quesI} style={{ marginBottom: '14px' }}>
+                                      <p style={{ fontSize: '13px', fontWeight: '600', color: '#374151', margin: '0 0 6px' }}>
+                                        {quesI + 1}. {ques.question}
+                                      </p>
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                        {(ques.options ?? []).map((opt: string, optI: number) => (
+                                          <div key={optI} style={{
+                                            fontSize: '13px', padding: '7px 12px',
+                                            borderRadius: '5px', border: '1px solid',
+                                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                            backgroundColor: optI === ques.answer ? '#f0fdf4' : 'white',
+                                            borderColor:     optI === ques.answer ? '#86efac' : '#e5e7eb',
+                                            color:           optI === ques.answer ? '#166534' : '#374151',
+                                            fontWeight:      optI === ques.answer ? '600' : '400',
+                                          }}>
+                                            <span>{opt}</span>
+                                            {optI === ques.answer && (
+                                              <span style={{ fontSize: '11px', color: '#16a34a', fontWeight: '700' }}>✓ Correct</span>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ))}
                                 </div>
                               ))}
-                            </div>
+                            </>
+                          )}
+
+                          {/* Fallback if nothing */}
+                          {guides.length === 0 && videos.length === 0 && quizzes.length === 0 && (
+                            <p style={{ fontSize: '13px', color: '#9ca3af' }}>No content attached.</p>
                           )}
                         </>
                       ) : (

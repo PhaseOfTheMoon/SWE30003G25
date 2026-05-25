@@ -363,8 +363,8 @@ export async function resubmitContent(
   const { data: updated, error: ue } = await supabase
     .from('content_review')
     .update({
-      status:       'pending',
-      comment:      null,
+      status: 'pending',
+      comment: null,
       reviewedDate: null,
     })
     .eq('reviewID', reviewID)
@@ -402,7 +402,7 @@ export async function viewPendingContent(authUID: string): Promise<ContentReview
   const vetPK = await resolveVetPK(authUID)
   const { data, error } = await supabase
     .from('content_review')
-    .select('*, first_aid_content(*, guide(*))')
+    .select('*, first_aid_content(*, guide(*), quiz(*), educational_video(*))')  // 👈
     .eq('vetID', vetPK)
     .eq('status', 'pending')
 
@@ -414,7 +414,7 @@ export async function viewAllVetContent(authUID: string): Promise<ContentReview[
   const vetPK = await resolveVetPK(authUID)
   const { data, error } = await supabase
     .from('content_review')
-    .select('*, first_aid_content(*, guide(*))')
+    .select('*, first_aid_content(*, guide(*), quiz(*), educational_video(*))')
     .eq('vetID', vetPK)
     .order('reviewedDate', { ascending: false })
 
@@ -423,25 +423,37 @@ export async function viewAllVetContent(authUID: string): Promise<ContentReview[
 }
 
 export async function validateContent(reviewID: string, comment: string): Promise<ContentReview> {
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('content_review')
     .update({ status: 'validated', comment, reviewedDate: new Date().toISOString() })
     .eq('reviewID', reviewID)
-    .select()
-    .single()
 
   if (error) throw new Error(error.message)
+
+  const { data, error: fe } = await supabase
+    .from('content_review')
+    .select('*, first_aid_content(*, guide(*), quiz(*), educational_video(*))')
+    .eq('reviewID', reviewID)
+    .single()
+
+  if (fe) throw new Error(fe.message)
   return data
 }
 
 export async function rejectContent(reviewID: string, comment: string): Promise<ContentReview> {
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('content_review')
     .update({ status: 'rejected', comment, reviewedDate: new Date().toISOString() })
     .eq('reviewID', reviewID)
-    .select()
-    .single()
 
   if (error) throw new Error(error.message)
+
+  const { data, error: fe } = await supabase
+    .from('content_review')
+    .select('*, first_aid_content(*, guide(*), quiz(*), educational_video(*))')
+    .eq('reviewID', reviewID)
+    .single()
+
+  if (fe) throw new Error(fe.message)
   return data
 }

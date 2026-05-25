@@ -1,14 +1,15 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import DashboardLayout from '@/components/dashboardLayout'
 import {
   viewEnquiry,
   assignEnquiryToVet,
   respondToEnquiry,
   type Enquiry,
 } from '@/lib/enquiry'
-
 import supabase from '@/lib/supabase'
+import { STAFF_NAV } from '@/app/components/sidebar'
 
 const STATUS_BADGE: Record<string, string> = {
   pending:   'bg-amber-50  text-amber-800  border border-amber-200',
@@ -64,11 +65,13 @@ export default function StaffEnquiriesPage() {
   // ── assign to vet ──────────────────────────────────────────────────────
   async function handleAssign() {
     if (!selected || !selectedVet) return
+    console.log('Assigning enquiryID:', selected.enquiryID, '→ vetID:', selectedVet)
     setSubmitting(true)
     setFeedback(null)
     try {
       const updated = await assignEnquiryToVet(selected.enquiryID, selectedVet)  // Staff.assignEnquiryToVet()
       syncEnquiry(updated)
+      setSelectedVet(updated.vetID ?? '') 
       setFeedback({ msg: 'Enquiry assigned to veterinarian.', ok: true })
     } catch (e: any) {
       setFeedback({ msg: 'Error: ' + e.message, ok: false })
@@ -97,6 +100,7 @@ export default function StaffEnquiriesPage() {
   function syncEnquiry(updated: Enquiry) {
     setEnquiries(prev => prev.map(e => e.enquiryID === updated.enquiryID ? updated : e))
     setSelected(updated)
+    setSelectedVet(updated.vetID ?? '') 
   }
 
   function vetName(id: string | null) {
@@ -112,8 +116,8 @@ export default function StaffEnquiriesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-5xl mx-auto">
+    <DashboardLayout role="Staff" name="Staff" navItems={STAFF_NAV}>
+      <div style={{ maxWidth: '900px' }}>
 
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -216,7 +220,7 @@ export default function StaffEnquiriesPage() {
                         <select
                           value={selectedVet}
                           onChange={e => setSelectedVet(e.target.value)}
-                          disabled={selected.status === 'assigned' || submitting}
+                          disabled={submitting}
                           className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100"
                         >
                           <option value="">Select a vet…</option>
@@ -226,14 +230,14 @@ export default function StaffEnquiriesPage() {
                         </select>
                         <button
                           onClick={handleAssign}
-                          disabled={!selectedVet || submitting || selected.status === 'assigned'}
+                          disabled={!selectedVet || submitting}
                           className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-40 transition-colors whitespace-nowrap"
                         >
                           {submitting ? 'Assigning…' : 'Assign'}
                         </button>
                       </div>
                       {selected.status === 'assigned' && (
-                        <p className="text-xs text-blue-500 mt-2">⏳ Awaiting vet response…</p>
+                        <p className="text-xs text-blue-500 mt-2">⏳ Currently assigned — you can reassign below.</p>
                       )}
                     </div>
 
@@ -277,6 +281,6 @@ export default function StaffEnquiriesPage() {
           </div>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   )
 }

@@ -20,13 +20,7 @@ import {
   type QuizQuestion,
   type ContentReview,
 } from '@/lib/content'
-
-const STAFF_NAV = [
-  { label: 'Dashboard',        href: '/staff',                icon: '🏠' },
-  { label: 'Manage Enquiries', href: '/staff/manageEnquiry',  icon: '💬' },
-  { label: 'Manage Content',   href: '/staff/manageContent',  icon: '📋' },
-  { label: 'Pending Review',   href: '/staff/pendingReview',  icon: '🔬' },
-]
+import { STAFF_NAV } from '@/app/components/sidebar'
 
 const PET_TYPES  = ['Dog', 'Cat', 'Bird', 'Rabbit', 'Other']
 const CATEGORIES = ['Choking', 'Bleeding', 'Burns', 'Fracture', 'Poisoning', 'Seizure']
@@ -179,6 +173,10 @@ export default function StaffContentPage() {
 
   async function handleSaveQuiz() {
     if (!content || !quizTitle || questions.some(q => !q.question)) return
+    if (questions.some(q => q.options.some(o => !o.trim()))) {
+      setFeedback({ msg: 'All answer options must be filled in before saving.', ok: false })
+      return
+    }
     setSavingType(true); setFeedback(null)
     try {
       const quiz = await createQuiz({ contentID: content.contentID, title: quizTitle, questions })
@@ -406,7 +404,7 @@ export default function StaffContentPage() {
               <button type="button" onClick={addQuestion} className="text-sm text-blue-600 hover:text-blue-800 font-medium">+ Add question</button>
               <div>
                 <Btn className="bg-blue-600 hover:bg-blue-700 text-white" onClick={handleSaveQuiz}
-                  disabled={savingType || !quizTitle || questions.some(q => !q.question)}>
+                  disabled={savingType || !quizTitle || questions.some(q => !q.question) || questions.some(q => q.options.some(o => !o.trim()))}>
                   {savingType ? 'Saving…' : 'Save quiz'}
                 </Btn>
               </div>

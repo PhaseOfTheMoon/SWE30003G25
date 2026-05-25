@@ -1,12 +1,15 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import DashboardLayout from '@/components/dashboardLayout'
 import {
   viewAssignedEnquiry,
   respondAssignedEnquiry,
   type Enquiry,
 } from '@/lib/enquiry'
 import supabase from '@/lib/supabase'
+import { VET_NAV } from '@/app/components/sidebar'
+
 
 export default function AssignedEnquiriesPage() {
   const [enquiries, setEnquiries]   = useState<Enquiry[]>([])
@@ -54,7 +57,7 @@ export default function AssignedEnquiriesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <DashboardLayout role="Veterinarian" name="Veterinarian" navItems={VET_NAV}>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Assigned Enquiries</h1>
 
       <div className="flex gap-6">
@@ -141,6 +144,6 @@ export default function AssignedEnquiriesPage() {
           </div>
         )}
       </div>
-    </div>
+    </DashboardLayout>
   )
 }
