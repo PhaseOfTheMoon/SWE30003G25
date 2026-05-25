@@ -30,7 +30,7 @@ type ContentType = 'guide' | 'video' | 'quiz'
 type GuideStep = {
   stepNumber:  number
   instruction: string
-  videoUrl:    string
+  videoUrl: string
 }
 
 const INPUT_CLS =
@@ -241,7 +241,7 @@ export default function StaffContentPage() {
 
   return (
     <DashboardLayout role="Staff" name="Alex Wong" navItems={STAFF_NAV}>
-      <div style={{ maxWidth: '720px' }}>
+      <div style={{ maxWidth: '720px', margin: '0 auto' }}>
 
         <div style={{ marginBottom: '28px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
