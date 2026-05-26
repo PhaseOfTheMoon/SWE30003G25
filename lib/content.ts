@@ -1,71 +1,66 @@
 import supabase from '@/lib/supabase'
 
-// ── Types ──────────────────────────────────────────────────────────────────
-
+// This file contains all content-related types and functions for both staff and vets, such as creating/updating first-aid guides, educational videos, quizzes, and handling vet reviews. 
+// It serves as the main interface for the app's content management features, abstracting away the underlying database operations and providing a clear API for the frontend pages to interact with content data.
 export type FirstAidContent = {
-  contentID:         string
-  staffID:           string | null   // set when staff creates content; requires migration below
-  petType:           string
+  contentID: string
+  staffID: string | null  
+  petType: string
   emergencyCategory: string
-  lastUpdateDate:    string
+  lastUpdateDate: string
 }
 
 export type Guide = {
-  guideID:     string
-  contentID:   string
-  title:       string
-  stepNumber:  number
+  guideID: string
+  contentID: string
+  title: string
+  stepNumber: number
   instruction: string
-  videoUrl:    string | null   // short demo video for this guide
+  videoUrl: string | null   
 }
 
 export type EducationalVideo = {
-  videoID:     string
-  contentID:   string
-  title:       string
-  videoUrl:    string
+  videoID: string
+  contentID: string
+  title: string
+  videoUrl: string
   description: string | null
 }
 
 export type Quiz = {
-  quizID:    string
+  quizID: string
   contentID: string
-  title:     string
-  questions: QuizQuestion[]   // stored as JSONB in Supabase
+  title: string
+  questions: QuizQuestion[]   
 }
 
 export type QuizQuestion = {
   question: string
-  options:  string[]
-  answer:   number   // index of correct option
+  options: string[]
+  answer: number   
 }
 
 export type ContentReview = {
-  reviewID:     string
-  contentID:    string
-  vetID:        string | null
-  status:       'pending' | 'validated' | 'rejected'
-  comment:      string | null
+  reviewID: string
+  contentID: string
+  vetID: string | null
+  status: 'pending' | 'validated' | 'rejected'
+  comment: string | null
   reviewedDate: string | null
 }
 
-// ── Step 1: Staff creates a first-aid content record ──────────────────────
-
-/**
- * Staff.createFirstAidContent()
- * Inserts the parent content row (petType + emergencyCategory).
- * This must be called first before creating a Guide, Video, or Quiz.
- */
+// staff create a first-aid content with basic info (pet type + emergency category). This generates a contentID which is used as the parent key for all related guides, videos, quizzes, and reviews. 
+// The content starts with no guide steps until staff add them in subsequent calls.
 export async function createFirstAidContent(payload: {
-  staffID:           string
-  petType:           string
+  staffID: string
+  petType: string
   emergencyCategory: string
 }): Promise<FirstAidContent> {
   const { data, error } = await supabase
     .from('first_aid_content')
     .insert({
-      staffID:           payload.staffID,
-      petType:           payload.petType,
+      staffID: payload.staffID,
+      petType: payload.petType,
       emergencyCategory: payload.emergencyCategory,
     })
     .select()
@@ -75,28 +70,22 @@ export async function createFirstAidContent(payload: {
   return data
 }
 
-// ── Step 2a: Staff creates a guide ───────────────────────────────────────
-
-/**
- * Staff.createGuide()
- * Inserts a Guide row linked to an existing first_aid_content record.
- * Optionally attaches a short demo video URL.
- */
+// Staff create a guide step for a first-aid content. A content can have multiple guide steps, differentiated by stepNumber.
 export async function createGuide(payload: {
-  contentID:   string
-  title:       string
-  stepNumber:  number
+  contentID: string
+  title: string
+  stepNumber: number
   instruction: string
-  videoUrl?:   string
+  videoUrl?: string
 }): Promise<Guide> {
   const { data, error } = await supabase
     .from('guide')
     .insert({
-      contentID:   payload.contentID,
-      title:       payload.title,
-      stepNumber:  payload.stepNumber,
+      contentID: payload.contentID,
+      title: payload.title,
+      stepNumber: payload.stepNumber,
       instruction: payload.instruction,
-      videoUrl:    payload.videoUrl ?? null,
+      videoUrl: payload.videoUrl ?? null,
     })
     .select()
     .single()
@@ -105,25 +94,19 @@ export async function createGuide(payload: {
   return data
 }
 
-// ── Step 2b: Staff creates an educational video ───────────────────────────
-
-/**
- * Staff.createEducationalVideo()
- * Inserts an EducationalVideo row linked to an existing first_aid_content record.
- * Requires an educational_video table — see migration in README.
- */
+// Staff create an educational video
 export async function createEducationalVideo(payload: {
-  contentID:   string
-  title:       string
-  videoUrl:    string
+  contentID: string
+  title: string
+  videoUrl: string
   description: string
 }): Promise<EducationalVideo> {
   const { data, error } = await supabase
     .from('educational_video')
     .insert({
-      contentID:   payload.contentID,
-      title:       payload.title,
-      videoUrl:    payload.videoUrl,
+      contentID: payload.contentID,
+      title: payload.title,
+      videoUrl: payload.videoUrl,
       description: payload.description,
     })
     .select()
@@ -133,23 +116,17 @@ export async function createEducationalVideo(payload: {
   return data
 }
 
-// ── Step 2c: Staff creates a quiz ─────────────────────────────────────────
-
-/**
- * Staff.createQuiz()
- * Inserts a Quiz row linked to an existing first_aid_content record.
- * questions is stored as JSONB — requires a quiz table, see migration in README.
- */
+// Staff create a quiz
 export async function createQuiz(payload: {
   contentID: string
-  title:     string
+  title: string
   questions: QuizQuestion[]
 }): Promise<Quiz> {
   const { data, error } = await supabase
     .from('quiz')
     .insert({
       contentID: payload.contentID,
-      title:     payload.title,
+      title: payload.title,
       questions: payload.questions,
     })
     .select()
@@ -159,15 +136,10 @@ export async function createQuiz(payload: {
   return data
 }
 
-// ── Step 3: Staff requests vet validation ────────────────────────────────
-
-/**
- * Staff.requestVetValidation()
- * Creates a ContentReview row linking the content to the chosen vet.
- */
+// staff required vet validation before content goes live. This function creates a content_review row with status "pending" to enter the vet review queue.
 export async function requestVetValidation(
   contentID: string,
-  vetID:     string
+  vetID: string
 ): Promise<ContentReview> {
   const { data, error } = await supabase
     .from('content_review')
@@ -179,12 +151,7 @@ export async function requestVetValidation(
   return data
 }
 
-// ── Step 4: Staff polls for review result ────────────────────────────────
-
-/**
- * Staff.viewContentReview()
- * Returns the most recent review record for a given content item.
- */
+// Since vets may take time to review, staff can call this function to get the latest review status and comments for a contentID. Returns null if no review exists yet.
 export async function viewContentReview(contentID: string): Promise<ContentReview | null> {
   const { data, error } = await supabase
     .from('content_review')
@@ -198,17 +165,12 @@ export async function viewContentReview(contentID: string): Promise<ContentRevie
   return data
 }
 
-// ── Step 5: Staff updates guide after review ─────────────────────────────
-
-/**
- * Staff.updateGuide()
- * Updates title, instruction, optional videoUrl and refreshes lastUpdateDate.
- */
+// staff update guide content and reset review to pending (if rejected) would be handled in a single function since they often happen together.
 export async function updateGuide(
-  guideID:     string,
-  title:       string,
+  guideID: string,
+  title: string,
   instruction: string,
-  videoUrl?:   string
+  videoUrl?: string
 ): Promise<Guide> {
   const { data: guide, error: ge } = await supabase
     .from('guide')
@@ -227,13 +189,11 @@ export async function updateGuide(
   return guide
 }
 
-/**
- * Staff.updateEducationalVideo()
- */
+// Staff update  for educational videos would be similar to updateGuide, updating their respective tables and refreshing lastUpdateDate on the parent content.
 export async function updateEducationalVideo(
-  videoID:     string,
-  title:       string,
-  videoUrl:    string,
+  videoID: string,
+  title: string,
+  videoUrl: string,
   description: string
 ): Promise<EducationalVideo> {
   const { data, error } = await supabase
@@ -253,12 +213,11 @@ export async function updateEducationalVideo(
   return data
 }
 
-/**
- * Staff.updateQuiz()
- */
+// Only guide has an update function since quiz content is unlikely to be edited after creation. 
+// If needed, can add updateQuiz() similarly.
 export async function updateQuiz(
-  quizID:    string,
-  title:     string,
+  quizID: string,
+  title: string,
   questions: QuizQuestion[]
 ): Promise<Quiz> {
   const { data, error } = await supabase
@@ -278,11 +237,8 @@ export async function updateQuiz(
   return data
 }
 
-// ── Staff: view all submitted content with review outcomes ────────────────
-
+// Staff: view all submitted content with review outcomes 
 /**
- * Staff.viewStaffContent()
- *
  * Queries from first_aid_content (where staffID lives) and embeds
  * content_review + guide. PostgREST cannot filter on an embedded table's
  * column from the parent query, so we start from first_aid_content instead.
@@ -308,11 +264,11 @@ export async function viewStaffContent(staffID: string): Promise<ContentReview[]
     const latest = reviews.sort(
       (a, b) => new Date(b.reviewedDate ?? 0).getTime() - new Date(a.reviewedDate ?? 0).getTime()
     )[0] ?? {
-      reviewID:     '',
-      contentID:    fac.contentID,
-      vetID:        null,
-      status:       'pending' as const,
-      comment:      null,
+      reviewID: '',
+      contentID: fac.contentID,
+      vetID: null,
+      status: 'pending' as const,
+      comment: null,
       reviewedDate: null,
     }
 
@@ -327,10 +283,9 @@ export async function viewStaffContent(staffID: string): Promise<ContentReview[]
   return rows
 }
 
-// ── Staff: edit guide steps and reset review to pending ──────────────────
+// Staff: edit guide steps and reset review to pending 
 
 /**
- * Staff.resubmitContent()
  * Called after a vet rejects a guide. Does two things atomically:
  *   1. Updates the guide row (title + instruction) via the existing updateGuide helper.
  *   2. Resets the content_review status back to 'pending' and clears the
@@ -340,8 +295,8 @@ export async function viewStaffContent(staffID: string): Promise<ContentReview[]
  * so the staff page can update its local state in one call.
  */
 export async function resubmitContent(
-  reviewID:    string,
-  draft:       { title: string; instruction: string; videoUrl?: string }
+  reviewID: string,
+  draft: { title: string; instruction: string; videoUrl?: string }
 ): Promise<ContentReview> {
   // 1. Fetch the review to get contentID → guideID
   const { data: review, error: re } = await supabase
@@ -375,8 +330,7 @@ export async function resubmitContent(
   return updated
 }
 
-// ── Vet-side functions (unchanged) ────────────────────────────────────────
-
+// Vet-side functions (unchanged) 
 async function resolveVetPK(authUID: string): Promise<string> {
   const { data: vetRow } = await supabase
     .from('veterinarian')
@@ -398,6 +352,7 @@ async function resolveVetPK(authUID: string): Promise<string> {
   return vetPK
 }
 
+// Called on vet dashboard to show all content assigned to this vet for review, along with their current review status and any comments. Sorted by most recent review first.
 export async function viewPendingContent(authUID: string): Promise<ContentReview[]> {
   const vetPK = await resolveVetPK(authUID)
   const { data, error } = await supabase
@@ -410,6 +365,7 @@ export async function viewPendingContent(authUID: string): Promise<ContentReview
   return data ?? []
 }
 
+// Vet can view all content assigned to them, not just pending ones, so they can also see previously reviewed content and their comments.
 export async function viewAllVetContent(authUID: string): Promise<ContentReview[]> {
   const vetPK = await resolveVetPK(authUID)
   const { data, error } = await supabase
@@ -422,6 +378,7 @@ export async function viewAllVetContent(authUID: string): Promise<ContentReview[
   return data ?? []
 }
 
+// Called when vet clicks "Validate" on a pending content item. Updates the review status to "validated" and saves any optional comment from the vet.
 export async function validateContent(reviewID: string, comment: string): Promise<ContentReview> {
   const { error } = await supabase
     .from('content_review')
@@ -440,6 +397,7 @@ export async function validateContent(reviewID: string, comment: string): Promis
   return data
 }
 
+// Called when vet rejects content, which sends it back to staff for revision
 export async function rejectContent(reviewID: string, comment: string): Promise<ContentReview> {
   const { error } = await supabase
     .from('content_review')

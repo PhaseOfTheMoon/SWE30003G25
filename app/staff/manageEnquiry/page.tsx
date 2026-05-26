@@ -12,22 +12,22 @@ import supabase from '@/lib/supabase'
 import { STAFF_NAV } from '@/app/components/sidebar'
 
 const STATUS_BADGE: Record<string, string> = {
-  pending:   'bg-amber-50  text-amber-800  border border-amber-200',
-  assigned:  'bg-blue-50   text-blue-800   border border-blue-200',
+  pending: 'bg-amber-50  text-amber-800  border border-amber-200',
+  assigned: 'bg-blue-50   text-blue-800   border border-blue-200',
   responded: 'bg-green-50  text-green-800  border border-green-200',
 }
 
 export default function StaffEnquiriesPage() {
   const [enquiries, setEnquiries] = useState<Enquiry[]>([])
-  const [vets,      setVets]      = useState<{ vetID: string; name: string }[]>([])
-  const [loading,   setLoading]   = useState(true)
-  const [selected,  setSelected]  = useState<Enquiry | null>(null)
+  const [vets, setVets] = useState<{ vetID: string; name: string }[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selected, setSelected] = useState<Enquiry | null>(null)
 
   // form state
   const [directReply, setDirectReply] = useState('')
   const [selectedVet, setSelectedVet] = useState('')
-  const [submitting,  setSubmitting]  = useState(false)
-  const [feedback,    setFeedback]    = useState<{ msg: string; ok: boolean } | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [feedback, setFeedback] = useState<{ msg: string; ok: boolean } | null>(null)
 
   useEffect(() => {
     loadEnquiries()
@@ -43,10 +43,12 @@ export default function StaffEnquiriesPage() {
     }
   }
 
+  // We want to be able to refresh the enquiries list after responding or assigning without having to refresh the whole page, 
+  // so we will create a separate function for loading enquiries that can be called after those actions.
   async function loadEnquiries() {
     setLoading(true)
     try {
-      const data = await viewEnquiry()   // Staff.viewEnquiry()
+      const data = await viewEnquiry()   
       setEnquiries(data)
     } catch (e: any) {
       console.error(e.message)
@@ -55,14 +57,16 @@ export default function StaffEnquiriesPage() {
     }
   }
 
-  function selectEnquiry(enq: Enquiry) {
+  // When an enquiry is selected from the list, we want to load the most up-to-date information for that enquiry in case it was updated by another staff member or vet. 
+  // This ensures that we are always working with the latest data when responding or assigning.
+  function selectEnquiry(enq: Enquiry) { 
     setSelected(enq)
     setFeedback(null)
     setDirectReply('')
     setSelectedVet(enq.vetID ?? '')
   }
 
-  // ── assign to vet ──────────────────────────────────────────────────────
+  //  assign to vet 
   async function handleAssign() {
     if (!selected || !selectedVet) return
     console.log('Assigning enquiryID:', selected.enquiryID, '→ vetID:', selectedVet)
@@ -80,7 +84,7 @@ export default function StaffEnquiriesPage() {
     }
   }
 
-  // ── respond directly ───────────────────────────────────────────────────
+  // respond directly 
   async function handleRespond() {
     if (!selected || !directReply.trim()) return
     setSubmitting(true)
@@ -97,19 +101,22 @@ export default function StaffEnquiriesPage() {
     }
   }
 
+  // After responding or assigning, we want to update the enquiries list and the selected enquiry with the latest data returned from the API.
   function syncEnquiry(updated: Enquiry) {
     setEnquiries(prev => prev.map(e => e.enquiryID === updated.enquiryID ? updated : e))
     setSelected(updated)
     setSelectedVet(updated.vetID ?? '') 
   }
 
+  // helper function to get vet name by ID for display in the enquiry list and detail view. We look up the vet's name from the vets state which we loaded on component mount.
   function vetName(id: string | null) {
     return vets.find(v => v.vetID === id)?.name ?? ''
   }
 
+  // helper function to display how long ago the enquiry was created in a human-readable format. This is just for better UX in the enquiry list.
   function timeAgo(iso: string) {
     const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
-    if (s < 60)    return 'just now'
+    if (s < 60) return 'just now'
     if (s < 3600)  return `${Math.floor(s / 60)} min ago`
     if (s < 86400) return `${Math.floor(s / 3600)} hr ago`
     return `${Math.floor(s / 86400)} day ago`
@@ -134,7 +141,7 @@ export default function StaffEnquiriesPage() {
         </div>
 
         <div className="flex gap-5">
-          {/* ── Left: list ── */}
+          {/* Left: list */}
           <div className="w-5/12 space-y-2 shrink-0">
             {loading && (
               <div className="text-sm text-gray-400 py-8 text-center">Loading…</div>
@@ -169,7 +176,7 @@ export default function StaffEnquiriesPage() {
             ))}
           </div>
 
-          {/* ── Right: actions ── */}
+          {/* Right: actions */}
           <div className="flex-1 min-w-0">
             {!selected ? (
               <div className="bg-white border border-gray-200 rounded-2xl h-64 flex flex-col items-center justify-center gap-2">

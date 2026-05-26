@@ -22,7 +22,7 @@ import {
 } from '@/lib/content'
 import { STAFF_NAV } from '@/app/components/sidebar'
 
-const PET_TYPES  = ['Dog', 'Cat', 'Bird', 'Rabbit', 'Other']
+const PET_TYPES = ['Dog', 'Cat', 'Bird', 'Rabbit', 'Other']
 const CATEGORIES = ['Choking', 'Bleeding', 'Burns', 'Fracture', 'Poisoning', 'Seizure']
 
 type ContentType = 'guide' | 'video' | 'quiz'
@@ -45,7 +45,7 @@ export default function StaffContentPage() {
   // Auth
   const [staffUserID, setStaffUserID] = useState<string | null>(null)
 
-  // Vets list (fetched from DB)
+  // Vets list (fetched from database)
   const [vets, setVets] = useState<Vet[]>([])
 
   useEffect(() => {
@@ -70,18 +70,16 @@ export default function StaffContentPage() {
     init()
   }, [])
 
-  // Step 1
-  const [petType,           setPetType]           = useState('')
+  const [petType, setPetType] = useState('')
   const [emergencyCategory, setEmergencyCategory] = useState('')
-  const [creatingContent,   setCreatingContent]   = useState(false)
-  const [content,           setContent]           = useState<FirstAidContent | null>(null)
+  const [creatingContent, setCreatingContent] = useState(false)
+  const [content, setContent] = useState<FirstAidContent | null>(null)
 
-  // Step 2
   const [contentType, setContentType] = useState<ContentType | null>(null)
-  const [savingType,  setSavingType]  = useState(false)
+  const [savingType, setSavingType] = useState(false)
   const [savedGuides, setSavedGuides] = useState<Guide[]>([])
-  const [savedVideo,  setSavedVideo]  = useState<EducationalVideo | null>(null)
-  const [savedQuiz,   setSavedQuiz]   = useState<Quiz | null>(null)
+  const [savedVideo, setSavedVideo] = useState<EducationalVideo | null>(null)
+  const [savedQuiz, setSavedQuiz] = useState<Quiz | null>(null)
 
   // guide
   const [guideTitle, setGuideTitle] = useState('')
@@ -91,8 +89,8 @@ export default function StaffContentPage() {
 
   // video
   const [videoTitle, setVideoTitle] = useState('')
-  const [videoUrl,   setVideoUrl]   = useState('')
-  const [videoDesc,  setVideoDesc]  = useState('')
+  const [videoUrl, setVideoUrl] = useState('')
+  const [videoDesc, setVideoDesc] = useState('')
 
   // quiz
   const [quizTitle, setQuizTitle] = useState('')
@@ -101,20 +99,21 @@ export default function StaffContentPage() {
   ])
 
   // Step 3
-  const [selectedVet,  setSelectedVet]  = useState('')
-  const [requesting,   setRequesting]   = useState(false)
+  const [selectedVet, setSelectedVet] = useState('')
+  const [requesting, setRequesting] = useState(false)
   const [reviewRecord, setReviewRecord] = useState<ContentReview | null>(null)
 
   // Step 4
-  const [updTitle,    setUpdTitle]    = useState('')
-  const [updBody,     setUpdBody]     = useState('')
+  const [updTitle, setUpdTitle] = useState('')
+  const [updBody, setUpdBody] = useState('')
   const [updVideoUrl, setUpdVideoUrl] = useState('')
-  const [updating,    setUpdating]    = useState(false)
+  const [updating, setUpdating] = useState(false)
 
   const [feedback, setFeedback] = useState<{ msg: string; ok: boolean } | null>(null)
 
   const typeSaved = !!(savedGuides.length || savedVideo || savedQuiz)
 
+  // Auto-refresh review status every 5 seconds if pending
   useEffect(() => {
     if (!content || !reviewRecord || reviewRecord.status !== 'pending') return
     const id = setInterval(async () => {
@@ -141,6 +140,7 @@ export default function StaffContentPage() {
     finally { setCreatingContent(false) }
   }
 
+  // handlers for saving guide, video, quiz 
   async function handleSaveGuide() {
     if (!content || !guideTitle || steps.some(s => !s.instruction)) return
     setSavingType(true); setFeedback(null)
@@ -160,6 +160,7 @@ export default function StaffContentPage() {
     finally { setSavingType(false) }
   }
 
+  // since we only allow creating one type of content per record, the guide and video handlers are mutually exclusive, so we can store the saved video/guide directly without needing an array
   async function handleSaveVideo() {
     if (!content || !videoTitle || !videoUrl) return
     setSavingType(true); setFeedback(null)
@@ -171,12 +172,15 @@ export default function StaffContentPage() {
     finally { setSavingType(false) }
   }
 
+  // for quiz, we allow multiple questions but they belong to the same quiz record, so we can store the saved quiz directly without needing an array
   async function handleSaveQuiz() {
     if (!content || !quizTitle || questions.some(q => !q.question)) return
     if (questions.some(q => q.options.some(o => !o.trim()))) {
       setFeedback({ msg: 'All answer options must be filled in before saving.', ok: false })
       return
     }
+    // in a real application, we would likely want to validate the quiz more thoroughly (e.g. at least 2 questions, each with 4 options, etc.) 
+    // and provide a better UI for managing questions and options, but for simplicity we will just check that all fields are filled in before saving.
     setSavingType(true); setFeedback(null)
     try {
       const quiz = await createQuiz({ contentID: content.contentID, title: quizTitle, questions })
@@ -197,6 +201,8 @@ export default function StaffContentPage() {
     finally { setRequesting(false) }
   }
 
+  // for simplicity, the update handler can update the title and either guide steps or video description based on what content type was created. In a real application, 
+  // we would likely want more granular update handlers and forms for each content type.
   async function handleUpdateContent() {
     if (!updTitle) return
     setUpdating(true); setFeedback(null)
@@ -213,7 +219,7 @@ export default function StaffContentPage() {
     finally { setUpdating(false) }
   }
 
-  // step helpers
+  // step for guide form
   function updateStep(i: number, field: keyof GuideStep, value: string | number) {
     setSteps(prev => prev.map((s, idx) => idx === i ? { ...s, [field]: value } : s))
   }
@@ -488,6 +494,7 @@ export default function StaffContentPage() {
   )
 }
 
+// Reusable components for steps, fields, buttons, etc.
 function Step({ step, title, done, locked = false, children }: {
   step: number; title: string; done: boolean; locked?: boolean; children: React.ReactNode
 }) {
@@ -503,7 +510,7 @@ function Step({ step, title, done, locked = false, children }: {
     </div>
   )
 }
-
+// In a real application, we would likely want to create more reusable components for form fields, buttons, badges, etc. to keep the code DRY and maintainable, but for simplicity we will define them inline here.
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
@@ -513,6 +520,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   )
 }
 
+// A simple select component that can be reused for pet type and emergency category selection. In a real application, we might want to create more customizable form components like this.
 function Select({ value, onChange, disabled, options }: {
   value: string; onChange: (v: string) => void; disabled?: boolean; options: string[]
 }) {
@@ -525,6 +533,7 @@ function Select({ value, onChange, disabled, options }: {
   )
 }
 
+// A reusable button component that can be used for various actions like creating content, saving, requesting validation, etc. It accepts props for styling, click handler, and disabled state.
 function Btn({ children, className = '', onClick, disabled }: {
   children: React.ReactNode; className?: string; onClick?: () => void; disabled?: boolean
 }) {
@@ -536,6 +545,7 @@ function Btn({ children, className = '', onClick, disabled }: {
   )
 }
 
+// A badge component to indicate saved content with a checkmark. It can be reused for showing the status of saved guides, videos, quizzes, etc.
 function SavedBadge({ children }: { children: React.ReactNode }) {
   return (
     <div className="mt-4 bg-green-50 border border-green-200 rounded-lg px-4 py-2.5 text-sm text-green-800">

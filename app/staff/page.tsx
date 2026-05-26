@@ -5,14 +5,16 @@ import Link from "next/link";
 import { STAFF_NAV } from '@/app/components/sidebar'
 
 type StatCardProps = {
-  icon:    string;
-  label:   string;
-  value:   number;
-  sub:     string;
-  href:    string;
+  icon: string;
+  label: string;
+  value: number;
+  sub: string;
+  href: string;
   accent?: boolean;
 };
 
+// The StatCard component is a reusable UI element that displays a key statistic with an icon, label, value, and a link to view more details. 
+// The accent prop can be used to highlight important stats.
 function StatCard({ icon, label, value, sub, href, accent }: StatCardProps) {
   return (
     <Link
@@ -46,30 +48,37 @@ function StatCard({ icon, label, value, sub, href, accent }: StatCardProps) {
   );
 }
 
+// The StaffDashboardPage component is the main dashboard for staff users. It displays an overview of key metrics, quick action buttons, and a list of recent enquiries that need attention. 
+// The data is currently hardcoded for demonstration purposes, but in a real application, it would be fetched from the backend (e.g., Supabase) to show real-time stats and enquiries.
 export default function StaffDashboardPage() {
   // Replace with real Supabase counts
   const stats = {
-    pendingEnquiries:   5,
-    assignedEnquiries:  3,
+    pendingEnquiries: 5,
+    assignedEnquiries: 3,
     respondedEnquiries: 12,
-    pendingReviews:     2,
-    publishedContent:   18,
+    pendingReviews: 2,
+    publishedContent: 18,
   };
 
+  //  Replace with real Supabase enquiries - this is just mock data to show how the recent enquiries section would look. Each enquiry has a subject, status, and time since it was submitted.
   const recentEnquiries = [
     { subject: "My dog is choking", status: "pending",   time: "10 mins ago" },
     { subject: "Cat not eating", status: "assigned",  time: "1 hour ago"  },
     { subject: "Rabbit leg injury", status: "responded", time: "3 hours ago" },
   ];
 
+  // The statusColor and statusText objects define the background and text colors for the status badges shown next to each enquiry in the recent enquiries list. 
+  // This helps staff quickly identify which enquiries are pending, assigned, or responded to.
   const statusColor: Record<string, string> = {
     pending: "#fef3c7",
     assigned: "#dbeafe",
     responded: "#dcfce7",
   };
+  // The statusText object defines the text color for each status badge, ensuring good contrast and readability based on the background color defined in statusColor. 
+  // For example, pending enquiries have a light yellow background with a darker orange text, while responded enquiries have a light green background with a darker green text.
   const statusText: Record<string, string> = {
-    pending:   "#92400e",
-    assigned:  "#1e40af",
+    pending: "#92400e",
+    assigned: "#1e40af",
     responded: "#166534",
   };
 

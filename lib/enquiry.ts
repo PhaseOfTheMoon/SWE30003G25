@@ -1,6 +1,6 @@
 import supabase from '@/lib/supabase'
 
-// ── Types ──────────────────────────────────────────────────────────────────
+// This file contains all content-related types and functions for both staff and vets, such as creating/updating first-aid guides, educational videos, quizzes, and handling vet reviews.
 export type Enquiry = {
   enquiryID: string
   subject: string
@@ -12,12 +12,7 @@ export type Enquiry = {
   created_at:  string
 }
 
-// ── Scenario 3: PetOwner submits enquiry ──────────────────────────────────
-
-/**
- * PetOwner.submitEnquiry()
- * Inserts a new enquiry row and returns it.
- */
+// pet owner submits an enquiry about a pet emergency
 export async function submitEnquiry(payload: {
   subject: string
   message: string
@@ -38,12 +33,7 @@ export async function submitEnquiry(payload: {
   return data
 }
 
-// ── Scenario 3: Staff views all enquiries ────────────────────────────────
-
-/**
- * Staff.viewEnquiry()
- * Returns all enquiries, newest first.
- */
+//  Staff view all enquiries in the system, sorted by most recent
 export async function viewEnquiry(): Promise<Enquiry[]> {
   const { data, error } = await supabase
     .from('enquiry')
@@ -54,12 +44,7 @@ export async function viewEnquiry(): Promise<Enquiry[]> {
   return data ?? []
 }
 
-// ── Scenario 3: Staff assigns enquiry to a Veterinarian ─────────────────
-
-/**
- * Staff.assignEnquiryToVet()
- * Sets vetID and flips status → 'assigned'.
- */
+// Staff assigns an enquiry to a vet, changing status to 'assigned'
 export async function assignEnquiryToVet(
   enquiryID: string,
   vetID:      string
@@ -75,12 +60,7 @@ export async function assignEnquiryToVet(
   return data
 }
 
-// ── Scenario 3: Vet views their assigned enquiries ───────────────────────
-
-/**
- * Veterinarian.viewAssignedEnquiry()
- * Returns enquiries assigned to the given vet.
- */
+// Vet views all enquiries assigned to them with status 'assigned'
 export async function viewAssignedEnquiry(vetID: string): Promise<Enquiry[]> {
   const { data, error } = await supabase
     .from('enquiry')
@@ -93,12 +73,7 @@ export async function viewAssignedEnquiry(vetID: string): Promise<Enquiry[]> {
   return data ?? []
 }
 
-// ── Scenario 3: Vet responds to assigned enquiry ─────────────────────────
-
-/**
- * Veterinarian.respondAssignedEnquiry()
- * Saves the vet's response and flips status → 'responded'.
- */
+// Vet responds to an assigned enquiry, changing status to 'responded' and saving their reply
 export async function respondAssignedEnquiry(
   enquiryID: string,
   response:  string
@@ -114,12 +89,7 @@ export async function respondAssignedEnquiry(
   return data
 }
 
-// ── Scenario 3 (else branch): Staff responds to general enquiry ──────────
-
-/**
- * Staff.respondToEnquiry()
- * Saves a staff response directly without vet involvement.
- */
+// Staff responds to an enquiry that has not been assigned to a vet, changing status to 'responded' and saving their reply
 export async function respondToEnquiry(
   enquiryID: string,
   response:  string

@@ -23,7 +23,7 @@ export default function DashboardLayout({ role, name, navItems, children }: Prop
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", backgroundColor: "#f9fafb", fontFamily: "sans-serif" }}>
 
-      {/* ── Top navbar ── */}
+      {/* Top navbar */}
       <nav style={{ backgroundColor: "white", boxShadow: "0 2px 4px rgba(0,0,0,0.08)", position: "sticky", top: 0, zIndex: 100 }}>
         <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ fontSize: "20px", fontWeight: "bold", color: "#dc2626" }}>
@@ -49,7 +49,7 @@ export default function DashboardLayout({ role, name, navItems, children }: Prop
 
       <div style={{ display: "flex", flex: 1 }}>
 
-        {/* ── Sidebar ── */}
+        {/* Sidebar */}
         <aside style={{ width: "220px", backgroundColor: "white", borderRight: "1px solid #e5e7eb", padding: "24px 12px", display: "flex", flexDirection: "column" }}>
           <nav style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
             {navItems.map((item) => {
@@ -88,7 +88,7 @@ export default function DashboardLayout({ role, name, navItems, children }: Prop
           </div>
         </aside>
 
-        {/* ── Main content ── */}
+        {/* Main content */}
         <main style={{ flex: 1, padding: "32px", overflowY: "auto" }}>
           {children}
         </main>

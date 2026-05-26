@@ -11,35 +11,37 @@ import supabase from '@/lib/supabase'
 import { STAFF_NAV } from '@/app/components/sidebar'
 
 type EditDraft = {
-  title:       string
+  title: string
   instruction: string
 }
 
 const STATUS_META: Record<string, { bg: string; border: string; text: string; dot: string; label: string }> = {
-  pending:   { bg: '#fffbeb', border: '#fde68a', text: '#92400e', dot: '#f59e0b', label: 'Pending Review' },
+  pending: { bg: '#fffbeb', border: '#fde68a', text: '#92400e', dot: '#f59e0b', label: 'Pending Review' },
   validated: { bg: '#f0fdf4', border: '#bbf7d0', text: '#166534', dot: '#16a34a', label: 'Validated'      },
-  rejected:  { bg: '#fff1f2', border: '#fecdd3', text: '#9f1239', dot: '#dc2626', label: 'Rejected'       },
+  rejected: { bg: '#fff1f2', border: '#fecdd3', text: '#9f1239', dot: '#dc2626', label: 'Rejected'       },
 }
 
 const CATEGORY_ICON: Record<string, string> = {
   'Emergency Care':  '🚨',
-  'First Aid':       '🩹',
+  'First Aid': '🩹',
   'Preventive Care': '🛡️',
-  'Behavioural':     '🧠',
+  'Behavioural': '🧠',
 }
 
 export default function StaffPendingReviewPage() {
-  const [reviews, setReviews]       = useState<ContentReview[]>([])
-  const [loading, setLoading]       = useState(true)
-  const [activeTab, setActiveTab]   = useState<'all' | 'pending' | 'validated' | 'rejected'>('all')
-  const [expanded, setExpanded]     = useState<string | null>(null)
-  const [editing, setEditing]       = useState<string | null>(null)
-  const [drafts, setDrafts]         = useState<Record<string, EditDraft>>({})
+  const [reviews, setReviews] = useState<ContentReview[]>([])
+  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'validated' | 'rejected'>('all')
+  const [expanded, setExpanded] = useState<string | null>(null)
+  const [editing, setEditing] = useState<string | null>(null)
+  const [drafts, setDrafts] = useState<Record<string, EditDraft>>({})
   const [submitting, setSubmitting] = useState(false)
-  const [feedback, setFeedback]     = useState<Record<string, { type: 'ok' | 'err'; msg: string }>>({})
+  const [feedback, setFeedback] = useState<Record<string, { type: 'ok' | 'err'; msg: string }>>({})
 
   useEffect(() => { loadContent() }, [])
 
+  // Load the content reviews assigned to this staff from the API when the component mounts. We get the current user from Supabase auth, then call viewStaffContent with their user ID to fetch their content reviews. 
+  // The reviews are stored in state and displayed in the UI. We also handle loading state and errors.
   async function loadContent() {
     setLoading(true)
     try {
@@ -54,19 +56,23 @@ export default function StaffPendingReviewPage() {
     }
   }
 
+  // When the staff clicks "Edit" on a rejected content review, we want to populate the edit form with the existing content data so they can make changes. 
+  // The startEdit function takes the review being edited, extracts the relevant fields (like title and instruction from the guide), and sets them in the drafts state keyed by reviewID. 
+  // It also sets the editing state to the current reviewID to show the edit form.
   function startEdit(review: ContentReview) {
     const guides = (review as any).guide ?? []
     const first  = guides[0]
     setDrafts(prev => ({
       ...prev,
       [review.reviewID]: {
-        title:       first?.title       ?? '',
+        title: first?.title ?? '',
         instruction: first?.instruction ?? '',
       },
     }))
     setEditing(review.reviewID)
   }
 
+  // When the staff finishes editing and clicks "Resubmit", we call handleResubmit which takes the current draft data for that review and sends it to the API via resubmitContent.
   async function handleResubmit(review: ContentReview) {
     const draft = drafts[review.reviewID]
     if (!draft?.title.trim() || !draft?.instruction.trim()) return
@@ -84,19 +90,22 @@ export default function StaffPendingReviewPage() {
   }
 
   const counts = {
-    all:       reviews.length,
-    pending:   reviews.filter(r => r.status === 'pending').length,
+    all: reviews.length,
+    pending: reviews.filter(r => r.status === 'pending').length,
     validated: reviews.filter(r => r.status === 'validated').length,
-    rejected:  reviews.filter(r => r.status === 'rejected').length,
+    rejected: reviews.filter(r => r.status === 'rejected').length,
   }
 
+  // We want to allow the staff to filter the content reviews by their status using tabs (All, Pending, Validated, Rejected). 
+  // The filtered variable computes the list of reviews to display based on the activeTab state. If "All" is selected, we show all reviews; otherwise, we filter by the selected status.
   const filtered = activeTab === 'all' ? reviews : reviews.filter(r => r.status === activeTab)
 
+  // When the staff clicks on a content review in the list, we want to show its details in an expanded panel. The toggleExpanded function sets the expanded state to the reviewID of the clicked review, or collapses it if it's already expanded.
   const tabs = [
-    { key: 'all'       as const, label: 'All',       count: counts.all       },
-    { key: 'pending'   as const, label: 'Pending',   count: counts.pending   },
+    { key: 'all' as const, label: 'All', count: counts.all },
+    { key: 'pending' as const, label: 'Pending', count: counts.pending },
     { key: 'validated' as const, label: 'Validated', count: counts.validated },
-    { key: 'rejected'  as const, label: 'Rejected',  count: counts.rejected  },
+    { key: 'rejected' as const, label: 'Rejected', count: counts.rejected },
   ]
 
   return (
@@ -181,16 +190,16 @@ export default function StaffPendingReviewPage() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {filtered.map((review, idx) => {
-            const content  = (review as any).first_aid_content
-            const guides   = (review as any).guide              ?? []
-            const quizzes  = (review as any).quiz               ?? []
-            const videos   = (review as any).educational_video  ?? []
+            const content = (review as any).first_aid_content
+            const guides = (review as any).guide ?? []
+            const quizzes = (review as any).quiz ?? []
+            const videos = (review as any).educational_video ?? []
             const contentType = guides.length > 0 ? 'Guide' : quizzes.length > 0 ? 'Quiz' : videos.length > 0 ? 'Video' : null
-            const meta     = STATUS_META[review.status] ?? STATUS_META.pending
-            const isOpen   = expanded === review.reviewID
+            const meta = STATUS_META[review.status] ?? STATUS_META.pending
+            const isOpen = expanded === review.reviewID
             const isEditing = editing === review.reviewID
-            const draft    = drafts[review.reviewID]
-            const fb       = feedback[review.reviewID]
+            const draft = drafts[review.reviewID]
+            const fb = feedback[review.reviewID]
             const isRejected = review.status === 'rejected'
 
             return (
@@ -236,7 +245,7 @@ export default function StaffPendingReviewPage() {
                             fontSize: '10px', fontWeight: '700', padding: '2px 7px',
                             borderRadius: '999px',
                             backgroundColor: contentType === 'Guide' ? '#dbeafe' : contentType === 'Quiz' ? '#ede9fe' : '#ffedd5',
-                            color:           contentType === 'Guide' ? '#1d4ed8' : contentType === 'Quiz' ? '#6d28d9' : '#c2410c',
+                            color: contentType === 'Guide' ? '#1d4ed8' : contentType === 'Quiz' ? '#6d28d9' : '#c2410c',
                           }}>
                             {contentType === 'Guide' ? '📋' : contentType === 'Quiz' ? '🧠' : '🎬'} {contentType}
                           </span>
@@ -284,7 +293,7 @@ export default function StaffPendingReviewPage() {
                     <div style={{ padding: '16px 20px', backgroundColor: '#fafafa' }}>
                       {!isEditing ? (
                         <>
-                          {/* ── Guide Steps ── */}
+                          {/* Guide Steps */}
                           {guides.length > 0 && (
                             <>
                               <p style={{ fontSize: '12px', fontWeight: '700', color: '#374151', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -318,7 +327,7 @@ export default function StaffPendingReviewPage() {
                             </>
                           )}
 
-                          {/* ── Educational Videos ── */}
+                          {/* Educational Videos */}
                           {videos.length > 0 && (
                             <>
                               <p style={{ fontSize: '12px', fontWeight: '700', color: '#374151', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -346,7 +355,7 @@ export default function StaffPendingReviewPage() {
                             </>
                           )}
 
-                          {/* ── Quiz ── */}
+                          {/* Quiz */}
                           {quizzes.length > 0 && (
                             <>
                               <p style={{ fontSize: '12px', fontWeight: '700', color: '#374151', margin: '0 0 12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -367,9 +376,9 @@ export default function StaffPendingReviewPage() {
                                             borderRadius: '5px', border: '1px solid',
                                             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                                             backgroundColor: optI === ques.answer ? '#f0fdf4' : 'white',
-                                            borderColor:     optI === ques.answer ? '#86efac' : '#e5e7eb',
-                                            color:           optI === ques.answer ? '#166534' : '#374151',
-                                            fontWeight:      optI === ques.answer ? '600' : '400',
+                                            borderColor: optI === ques.answer ? '#86efac' : '#e5e7eb',
+                                            color: optI === ques.answer ? '#166534' : '#374151',
+                                            fontWeight: optI === ques.answer ? '600' : '400',
                                           }}>
                                             <span>{opt}</span>
                                             {optI === ques.answer && (

@@ -16,13 +16,13 @@ export default function ValidateContentPage() {
   const searchParams = useSearchParams()
   const initialTab = (searchParams.get('status') ?? 'pending') as 'pending' | 'validated' | 'rejected'
 
-  const [reviews, setReviews]       = useState<ContentReview[]>([])
-  const [tab, setTab]               = useState<'pending' | 'validated' | 'rejected'>(initialTab)
-  const [loading, setLoading]       = useState(true)
-  const [selected, setSelected]     = useState<ContentReview | null>(null)
-  const [comment, setComment]       = useState('')
+  const [reviews, setReviews] = useState<ContentReview[]>([])
+  const [tab, setTab] = useState<'pending' | 'validated' | 'rejected'>(initialTab)
+  const [loading, setLoading] = useState(true)
+  const [selected, setSelected] = useState<ContentReview | null>(null)
+  const [comment, setComment] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [feedback, setFeedback]     = useState('')
+  const [feedback, setFeedback] = useState('')
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -44,6 +44,7 @@ export default function ValidateContentPage() {
     }
   }
 
+  // The filtered variable holds the list of content reviews that match the currently selected tab (pending, validated, or rejected). This allows the UI to display only the relevant reviews based on their status when a veterinarian clicks on the corresponding tab.
   const filtered = reviews.filter(r => r.status === tab)
 
   async function handleValidateContent() {
@@ -61,6 +62,8 @@ export default function ValidateContentPage() {
     }
   }
 
+  // The handleRejectContent function is called when a veterinarian chooses to reject a piece of content under review. 
+  // It requires the veterinarian to provide a comment explaining the reason for rejection. The function then updates the content's status to "rejected" in the backend and provides feedback to the user about the action taken.
   async function handleRejectContent() {
     if (!selected || !comment.trim()) return
     setSubmitting(true)
@@ -76,14 +79,16 @@ export default function ValidateContentPage() {
     }
   }
 
+  // The updateReviewInList function is a helper function that updates the state of the content reviews list after a review has been validated or rejected. 
+  // It merges the updated review data returned from the API with the existing review in the state to ensure that any nested content details (like quiz questions or guide steps) are preserved while only the changed fields (status, comment, reviewedDate) are updated.
   function updateReviewInList(updated: ContentReview) {
     // The API returns a plain row without nested first_aid_content (quiz/video/guide).
     // Merge only the changed scalar fields into the existing record so the nested
     // content already in state is preserved.
     const merge = (existing: ContentReview): ContentReview => ({
       ...existing,
-      status:       updated.status,
-      comment:      updated.comment,
+      status: updated.status,
+      comment: updated.comment,
       reviewedDate: updated.reviewedDate,
     })
 
@@ -93,16 +98,16 @@ export default function ValidateContentPage() {
   }
 
   const STATUS_STYLES: Record<string, string> = {
-    pending:   'bg-yellow-100 text-yellow-800',
-    validated: 'bg-green-100  text-green-800',
-    rejected:  'bg-red-100    text-red-800',
+    pending: 'bg-yellow-100 text-yellow-800',
+    validated: 'bg-green-100 text-green-800',
+    rejected: 'bg-red-100 text-red-800',
   }
 
   return (
     <DashboardLayout role="Veterinarian" name="Veterinarian" navItems={VET_NAV}>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Validate Content</h1>
 
-      {/* ── Tabs ── */}
+      {/* Tabs */}
       <div className="flex gap-2 mb-4">
         {(['pending', 'validated', 'rejected'] as const).map(s => (
           <button
@@ -111,9 +116,9 @@ export default function ValidateContentPage() {
             onClick={() => { setTab(s); setSelected(null) }}
             className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors
               ${tab === s
-                ? s === 'pending'   ? 'bg-yellow-100 border-yellow-400 text-yellow-800'
+                ? s === 'pending' ? 'bg-yellow-100 border-yellow-400 text-yellow-800'
                 : s === 'validated' ? 'bg-green-100  border-green-400  text-green-800'
-                :                    'bg-red-100    border-red-400    text-red-800'
+                : 'bg-red-100 border-red-400 text-red-800'
                 : 'bg-white border-gray-200 text-gray-500 hover:border-gray-400'}`}
           >
             {s.charAt(0).toUpperCase() + s.slice(1)}
@@ -123,7 +128,7 @@ export default function ValidateContentPage() {
       </div>
 
       <div className="flex gap-6">
-        {/* ── Left: reviews list ── */}
+        {/* Left: reviews list */}
         <div className="w-1/2 space-y-3">
           {loading && <p className="text-gray-500">Loading…</p>}
 
@@ -131,14 +136,15 @@ export default function ValidateContentPage() {
             <p className="text-gray-400">No {tab} content.</p>
           )}
 
+          {/* Review items */}
           {filtered.map((review, idx) => {
             const content = (review as any).first_aid_content
-            const guides  = content?.guide ?? []
+            const guides = content?.guide ?? []
             const quizzes = content?.quiz ?? []
             const videos  = content?.educational_video ?? []
 
             const typeBadges: { label: string; cls: string }[] = [
-              ...(guides.length  > 0 ? [{ label: 'Guide', cls: 'bg-blue-50 text-blue-700' }]    : []),
+              ...(guides.length  > 0 ? [{ label: 'Guide', cls: 'bg-blue-50 text-blue-700' }] : []),
               ...(quizzes.length > 0 ? [{ label: 'Quiz',  cls: 'bg-purple-50 text-purple-700' }] : []),
               ...(videos.length  > 0 ? [{ label: 'Video', cls: 'bg-orange-50 text-orange-700' }] : []),
             ]
@@ -191,7 +197,7 @@ export default function ValidateContentPage() {
           })}
         </div>
 
-        {/* ── Right: review panel ── */}
+        {/* Right: review panel */}
         {selected && (
           <div className="w-1/2 bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-5 self-start">
             {(() => {
@@ -212,7 +218,7 @@ export default function ValidateContentPage() {
                     </p>
                   </div>
 
-                  {/* ── Guide Steps ── */}
+                  {/* Guide Steps */}
                   {guides.length > 0 && (
                     <div className="bg-gray-50 rounded-lg p-4 space-y-3">
                       <p className="text-sm font-semibold text-gray-700 flex items-center gap-2">
@@ -243,7 +249,7 @@ export default function ValidateContentPage() {
                     </div>
                   )}
 
-                  {/* ── Educational Videos ── */}
+                  {/* Educational Videos */}
                   {videos.length > 0 && (
                     <div className="bg-orange-50 rounded-lg p-4 space-y-3">
                       <p className="text-sm font-semibold text-gray-700 flex items-center gap-2">
@@ -270,7 +276,7 @@ export default function ValidateContentPage() {
                     </div>
                   )}
 
-                  {/* ── Quizzes ── */}
+                  {/* Quizzes */}
                   {quizzes.length > 0 && (
                     <div className="bg-purple-50 rounded-lg p-4 space-y-4">
                       <p className="text-sm font-semibold text-gray-700 flex items-center gap-2">
@@ -315,7 +321,7 @@ export default function ValidateContentPage() {
               )
             })()}
 
-            {/* ── Review result (validated / rejected) ── */}
+            {/* Review result (validated / rejected) */}
             {selected.status !== 'pending' && (
               <div className={`rounded-lg p-4 border
                 ${selected.status === 'validated'
@@ -331,7 +337,7 @@ export default function ValidateContentPage() {
               </div>
             )}
 
-            {/* ── Review actions (pending only) ── */}
+            {/* Review actions (pending only) */}
             {selected.status === 'pending' && (
               <div className="border-t pt-4 space-y-3">
                 <p className="text-sm font-semibold text-gray-700">Your Review Comment</p>
@@ -366,7 +372,7 @@ export default function ValidateContentPage() {
               </div>
             )}
 
-            {/* ── Feedback message ── */}
+            {/* Feedback message */}
             {feedback && (
               <p className={`text-sm font-medium ${feedback.startsWith('Error') ? 'text-red-600' : 'text-green-600'}`}>
                 {feedback}

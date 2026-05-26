@@ -52,11 +52,11 @@ type Enquiry = { subject: string; status: string; time: string };
 export default function VetDashboardPage() {
   const [vetName, setVetName] = useState("Veterinarian");
   const [stats, setStats] = useState({
-    assignedEnquiries:  0,
+    assignedEnquiries: 0,
     respondedEnquiries: 0,
-    pendingReviews:     0,
-    validatedContent:   0,
-    rejectedContent:    0,
+    pendingReviews: 0,
+    validatedContent: 0,
+    rejectedContent: 0,
   });
   const [recentEnquiries, setRecentEnquiries] = useState<Enquiry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,14 +84,14 @@ export default function VetDashboardPage() {
       if (enquiries) {
         setStats(prev => ({
           ...prev,
-          assignedEnquiries:  enquiries.filter(e => e.status === "assigned").length,
+          assignedEnquiries: enquiries.filter(e => e.status === "assigned").length,
           respondedEnquiries: enquiries.filter(e => e.status === "responded").length,
         }));
         setRecentEnquiries(
           enquiries.slice(0, 3).map(e => ({
             subject: e.subject,
-            status:  e.status,
-            time:    new Date(e.created_at).toLocaleString(),
+            status: e.status,
+            time: new Date(e.created_at).toLocaleString(),
           }))
         );
       }
@@ -105,9 +105,9 @@ export default function VetDashboardPage() {
       if (reviews) {
         setStats(prev => ({
           ...prev,
-          pendingReviews:   reviews.filter(r => r.status === "pending").length,
+          pendingReviews: reviews.filter(r => r.status === "pending").length,
           validatedContent: reviews.filter(r => r.status === "validated").length,
-          rejectedContent:  reviews.filter(r => r.status === "rejected").length,
+          rejectedContent: reviews.filter(r => r.status === "rejected").length,
         }));
       }
 
@@ -117,11 +117,11 @@ export default function VetDashboardPage() {
   }, []);
 
   const statusColor: Record<string, string> = {
-    assigned:  "#dbeafe",
+    assigned: "#dbeafe",
     responded: "#dcfce7",
   };
   const statusText: Record<string, string> = {
-    assigned:  "#1e40af",
+    assigned: "#1e40af",
     responded: "#166534",
   };
 
@@ -138,11 +138,11 @@ export default function VetDashboardPage() {
 
       {/* Stat cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginBottom: "32px" }}>
-        <StatCard icon="💬" label="Assigned Enquiries"  value={stats.assignedEnquiries}  sub="Awaiting your response"       href="/vet/assignedEnquiries" accent />
-        <StatCard icon="✅" label="Enquiries Responded" value={stats.respondedEnquiries} sub="Replied to pet owners"         href="/vet/assignedEnquiries" />
-        <StatCard icon="🔬" label="Pending Reviews"     value={stats.pendingReviews}     sub="Content awaiting validation"  href="/vet/validateContent?status=pending"   accent />
-        <StatCard icon="✔️" label="Validated Content"   value={stats.validatedContent}   sub="Guides approved by you"       href="/vet/validateContent?status=validated" />
-        <StatCard icon="✖️" label="Rejected Content"    value={stats.rejectedContent}    sub="Sent back for revision"       href="/vet/validateContent?status=rejected" />
+        <StatCard icon="💬" label="Assigned Enquiries" value={stats.assignedEnquiries} sub="Awaiting your response" href="/vet/assignedEnquiries" accent />
+        <StatCard icon="✅" label="Enquiries Responded" value={stats.respondedEnquiries} sub="Replied to pet owners" href="/vet/assignedEnquiries" />
+        <StatCard icon="🔬" label="Pending Reviews" value={stats.pendingReviews} sub="Content awaiting validation" href="/vet/validateContent?status=pending"   accent />
+        <StatCard icon="✔️" label="Validated Content" value={stats.validatedContent} sub="Guides approved by you" href="/vet/validateContent?status=validated" />
+        <StatCard icon="✖️" label="Rejected Content" value={stats.rejectedContent} sub="Sent back for revision" href="/vet/validateContent?status=rejected" />
       </div>
 
       {/* Quick actions */}
