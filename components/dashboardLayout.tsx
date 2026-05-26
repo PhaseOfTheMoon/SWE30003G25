@@ -1,0 +1,99 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { ReactNode } from "react";
+
+type NavItem = {
+  label: string;
+  href: string;
+  icon: string;
+};
+
+type Props = {
+  role: "Staff" | "Veterinarian";
+  name: string;
+  navItems: NavItem[];
+  children: ReactNode;
+};
+
+export default function DashboardLayout({ role, name, navItems, children }: Props) {
+  const pathname = usePathname();
+
+  return (
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", backgroundColor: "#f9fafb", fontFamily: "sans-serif" }}>
+
+      {/* Top navbar */}
+      <nav style={{ backgroundColor: "white", boxShadow: "0 2px 4px rgba(0,0,0,0.08)", position: "sticky", top: 0, zIndex: 100 }}>
+        <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ fontSize: "20px", fontWeight: "bold", color: "#dc2626" }}>
+            🐾 PetFirstAid
+          </div>
+          <div style={{ fontSize: "13px", color: "#6b7280", backgroundColor: "#f3f4f6", padding: "4px 12px", borderRadius: "999px" }}>
+            {role} Portal
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div style={{ textAlign: "right" }}>
+              <p style={{ fontSize: "14px", fontWeight: "600", color: "#111827", margin: 0 }}>{name}</p>
+              <p style={{ fontSize: "12px", color: "#9ca3af", margin: 0 }}>{role}</p>
+            </div>
+            <div style={{ width: "36px", height: "36px", borderRadius: "50%", backgroundColor: "#dc2626", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", fontSize: "14px" }}>
+              {name.charAt(0)}
+            </div>
+            <button style={{ fontSize: "13px", color: "#6b7280", background: "none", border: "none", cursor: "pointer" }}>
+              Sign out
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <div style={{ display: "flex", flex: 1 }}>
+
+        {/* Sidebar */}
+        <aside style={{ width: "220px", backgroundColor: "white", borderRight: "1px solid #e5e7eb", padding: "24px 12px", display: "flex", flexDirection: "column" }}>
+          <nav style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            {navItems.map((item) => {
+              const active = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    padding: "10px 14px",
+                    borderRadius: "6px",
+                    fontSize: "14px",
+                    fontWeight: active ? "600" : "400",
+                    color: active ? "white" : "#374151",
+                    backgroundColor: active ? "#dc2626" : "transparent",
+                    textDecoration: "none",
+                  }}
+                  onMouseEnter={e => {
+                    if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = "#fef2f2";
+                  }}
+                  onMouseLeave={e => {
+                    if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = "transparent";
+                  }}
+                >
+                  <span style={{ fontSize: "16px" }}>{item.icon}</span>
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+          <div style={{ marginTop: "auto", paddingTop: "24px", borderTop: "1px solid #f3f4f6" }}>
+            <p style={{ fontSize: "11px", color: "#9ca3af" }}>PetFirstAid © 2026</p>
+          </div>
+        </aside>
+
+        {/* Main content */}
+        <main style={{ flex: 1, padding: "32px", overflowY: "auto" }}>
+          {children}
+        </main>
+
+      </div>
+    </div>
+  );
+}

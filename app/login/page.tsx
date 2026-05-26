@@ -42,6 +42,8 @@ export default function LoginPage() {
       .eq("id", data.user.id)
       .single();
 
+    console.log("user id:", data.user.id)   // check UUID matches
+    console.log("profile:", profile)       
     setLoading(false);
 
     // Redirect to the right dashboard based on role
