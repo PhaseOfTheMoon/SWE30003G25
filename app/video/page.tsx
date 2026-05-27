@@ -8,6 +8,22 @@ import { viewPublishedVideos, type FirstAidVideoContent } from "@/lib/content";
 
 type LoadState = "loading" | "ready" | "error";
 
+function toYouTubeEmbed(url: string): string | null {
+  try {
+    const u = new URL(url);
+    let id: string | null = null;
+    if (u.hostname === "youtu.be") {
+      id = u.pathname.slice(1);
+    } else if (u.hostname.includes("youtube.com")) {
+      if (u.pathname === "/watch") id = u.searchParams.get("v");
+      else if (u.pathname.startsWith("/embed/")) return url;
+    }
+    return id ? `https://www.youtube.com/embed/${id}` : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function VideoPage() {
   const [state, setState] = useState<LoadState>("loading");
   const [contentRows, setContentRows] = useState<FirstAidVideoContent[]>([]);
@@ -29,7 +45,7 @@ export default function VideoPage() {
   }, []);
 
   return (
-    <main style={{ minHeight: "100vh", backgroundColor: "#f9fafb" }}>
+    <main style={{ minHeight: "100vh", backgroundColor: "#f9fafb", display: "flex", flexDirection: "column" }}>
       <Navbar />
 
       <section style={{ backgroundColor: "white", borderBottom: "1px solid #e5e7eb" }}>
@@ -46,7 +62,7 @@ export default function VideoPage() {
         </div>
       </section>
 
-      <section style={{ maxWidth: "1100px", margin: "0 auto", padding: "32px 16px 56px" }}>
+      <section style={{ maxWidth: "1100px", margin: "0 auto", padding: "32px 16px 56px", flex: 1, width: "100%" }}>
         {state === "loading" && (
           <p style={{ color: "#6b7280" }}>Loading validated videos...</p>
         )}
@@ -73,7 +89,7 @@ export default function VideoPage() {
         )}
 
         {contentRows.length > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "18px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(420px, 1fr))", gap: "18px" }}>
             {contentRows.flatMap((content) =>
               content.educational_video.map((video) => (
                 <article key={video.videoID} style={{ backgroundColor: "white", border: "1px solid #e5e7eb", borderRadius: "8px", padding: "22px" }}>
@@ -88,9 +104,24 @@ export default function VideoPage() {
                       {video.description}
                     </p>
                   )}
-                  <a href={video.videoUrl} target="_blank" rel="noreferrer" style={{ display: "inline-flex", color: "white", backgroundColor: "#dc2626", borderRadius: "4px", padding: "10px 14px", fontWeight: 700, textDecoration: "none" }}>
-                    Watch video
-                  </a>
+                  {(() => {
+                    const embedUrl = toYouTubeEmbed(video.videoUrl);
+                    return embedUrl ? (
+                      <div style={{ position: "relative", width: "100%", paddingBottom: "56.25%", borderRadius: "8px", overflow: "hidden", background: "#000" }}>
+                        <iframe
+                          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }}
+                          src={embedUrl}
+                          title={video.title}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      </div>
+                    ) : (
+                      <a href={video.videoUrl} target="_blank" rel="noreferrer" style={{ display: "inline-flex", color: "white", backgroundColor: "#dc2626", borderRadius: "4px", padding: "10px 14px", fontWeight: 700, textDecoration: "none" }}>
+                        Watch video
+                      </a>
+                    );
+                  })()}
                 </article>
               ))
             )}

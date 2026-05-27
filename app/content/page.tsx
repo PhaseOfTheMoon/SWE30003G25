@@ -12,6 +12,22 @@ import {
 
 type LoadState = "loading" | "ready" | "error";
 
+function toYouTubeEmbed(url: string): string | null {
+  try {
+    const u = new URL(url);
+    let id: string | null = null;
+    if (u.hostname === "youtu.be") {
+      id = u.pathname.slice(1);
+    } else if (u.hostname.includes("youtube.com")) {
+      if (u.pathname === "/watch") id = u.searchParams.get("v");
+      else if (u.pathname.startsWith("/embed/")) return url;
+    }
+    return id ? `https://www.youtube.com/embed/${id}` : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function ContentPage() {
   const [state, setState] = useState<LoadState>("loading");
   const [items, setItems] = useState<FirstAidContentBundle[]>([]);
@@ -174,21 +190,36 @@ export default function ContentPage() {
                           Educational video
                         </p>
                         <div className={styles.videoList}>
-                          {content.educational_video.map((video) => (
-                            <div key={video.videoID}>
-                              <h3 className={styles.videoTitle}>
-                                {video.title}
-                              </h3>
-                              {video.description && (
-                                <p className={styles.videoDescription}>
-                                  {video.description}
-                                </p>
-                              )}
-                              <a href={video.videoUrl} target="_blank" rel="noreferrer" className={styles.videoButton}>
-                                Watch video
-                              </a>
-                            </div>
-                          ))}
+                          {content.educational_video.map((video) => {
+                            const embedUrl = toYouTubeEmbed(video.videoUrl);
+                            return (
+                              <div key={video.videoID}>
+                                <h3 className={styles.videoTitle}>
+                                  {video.title}
+                                </h3>
+                                {video.description && (
+                                  <p className={styles.videoDescription}>
+                                    {video.description}
+                                  </p>
+                                )}
+                                {embedUrl ? (
+                                  <div className={styles.videoEmbed}>
+                                    <iframe
+                                      className={styles.videoIframe}
+                                      src={embedUrl}
+                                      title={video.title}
+                                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                      allowFullScreen
+                                    />
+                                  </div>
+                                ) : (
+                                  <a href={video.videoUrl} target="_blank" rel="noreferrer" className={styles.videoFallback}>
+                                    Watch video
+                                  </a>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     )}

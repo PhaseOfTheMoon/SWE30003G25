@@ -29,7 +29,7 @@ export default function GuidePage() {
   }, []);
 
   return (
-    <main style={{ minHeight: "100vh", backgroundColor: "#f9fafb" }}>
+    <main style={{ minHeight: "100vh", backgroundColor: "#f9fafb", display: "flex", flexDirection: "column" }}>
       <Navbar />
 
       <section style={{ backgroundColor: "white", borderBottom: "1px solid #e5e7eb" }}>
@@ -46,7 +46,7 @@ export default function GuidePage() {
         </div>
       </section>
 
-      <section style={{ maxWidth: "1100px", margin: "0 auto", padding: "32px 16px 56px" }}>
+      <section style={{ maxWidth: "1100px", margin: "0 auto", padding: "32px 16px 56px", flex: 1, width: "100%" }}>
         {state === "loading" && (
           <p style={{ color: "#6b7280" }}>Loading validated guides...</p>
         )}
