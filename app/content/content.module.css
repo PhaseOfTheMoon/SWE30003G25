@@ -1,0 +1,317 @@
+.page {
+  min-height: 100vh;
+  background: oklch(0.965 0.004 255);
+}
+
+.shell {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 34px 16px 64px;
+}
+
+.header {
+  max-width: 680px;
+  margin-bottom: 26px;
+}
+
+.title {
+  color: oklch(0.22 0.006 255);
+  font-size: 32px;
+  line-height: 1.18;
+  font-weight: 750;
+  margin: 0;
+}
+
+.lead {
+  color: oklch(0.42 0.012 255);
+  line-height: 1.6;
+  margin: 8px 0 0;
+}
+
+.loadingList,
+.contentList,
+.steps,
+.videoList {
+  display: grid;
+}
+
+.loadingList {
+  gap: 12px;
+}
+
+.loadingRow {
+  height: 74px;
+  border-radius: 8px;
+  background: oklch(0.91 0.006 255);
+}
+
+.alert {
+  color: oklch(0.37 0.12 22);
+  background: oklch(0.96 0.025 22);
+  border: 1px solid oklch(0.82 0.075 22);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.alert p {
+  margin: 6px 0 0;
+}
+
+.alertDetail {
+  color: oklch(0.47 0.14 22);
+  font-size: 13px;
+}
+
+.emptyState,
+.disclosure {
+  background: oklch(0.985 0.003 255);
+  border: 1px solid oklch(0.89 0.006 255);
+  border-radius: 8px;
+}
+
+.emptyState {
+  padding: 28px;
+}
+
+.emptyState h2 {
+  color: oklch(0.22 0.006 255);
+  font-size: 18px;
+  font-weight: 750;
+  margin: 0 0 8px;
+}
+
+.emptyState p {
+  color: oklch(0.42 0.012 255);
+  margin: 0 0 18px;
+}
+
+.textLink,
+.stepLink {
+  color: oklch(0.26 0.008 255);
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.textLink:hover,
+.stepLink:hover {
+  text-decoration: underline;
+}
+
+.petPicker {
+  margin-bottom: 24px;
+}
+
+.label {
+  color: oklch(0.26 0.008 255);
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 10px;
+}
+
+.petList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.petButton {
+  min-width: 112px;
+  border-radius: 8px;
+  border: 1px solid oklch(0.86 0.008 255);
+  background: oklch(0.985 0.003 255);
+  color: oklch(0.26 0.008 255);
+  padding: 12px 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.petButton:hover {
+  background: oklch(0.955 0.006 255);
+}
+
+.petButton:focus-visible,
+.summary:focus-visible,
+.videoButton:focus-visible {
+  outline: 2px solid oklch(0.34 0.012 255);
+  outline-offset: 2px;
+}
+
+.petButtonActive {
+  border: 2px solid oklch(0.26 0.008 255);
+  background: oklch(0.925 0.008 255);
+}
+
+.petName {
+  display: block;
+  font-weight: 750;
+}
+
+.petCount,
+.summaryMeta {
+  color: oklch(0.5 0.012 255);
+  font-size: 12px;
+}
+
+.contentList {
+  gap: 14px;
+}
+
+.disclosure {
+  overflow: hidden;
+}
+
+.summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  list-style: none;
+  padding: 18px 20px;
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+.summaryText {
+  min-width: 0;
+}
+
+.summaryTitle {
+  color: oklch(0.22 0.006 255);
+  display: block;
+  font-size: 18px;
+  font-weight: 750;
+}
+
+.summaryMeta {
+  display: block;
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+.summaryAction {
+  background: oklch(0.93 0.006 255);
+  border-radius: 999px;
+  color: oklch(0.26 0.008 255);
+  flex: 0 0 auto;
+  font-size: 13px;
+  font-weight: 750;
+  padding: 4px 10px;
+}
+
+.disclosure[open] .summaryAction {
+  background: oklch(0.86 0.008 255);
+}
+
+.panel {
+  border-top: 1px solid oklch(0.91 0.006 255);
+  padding: 18px 20px 22px;
+}
+
+.steps {
+  gap: 14px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.step {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 32px 1fr;
+}
+
+.stepNumber {
+  align-items: center;
+  background: oklch(0.925 0.008 255);
+  border-radius: 999px;
+  color: oklch(0.28 0.01 255);
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 750;
+  height: 28px;
+  justify-content: center;
+  width: 28px;
+}
+
+.stepTitle {
+  color: oklch(0.22 0.006 255);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.stepText {
+  color: oklch(0.42 0.012 255);
+  line-height: 1.65;
+}
+
+.stepLink {
+  display: block;
+  font-size: 14px;
+  margin-top: 6px;
+}
+
+.videoBlock {
+  border-top: 1px solid oklch(0.91 0.006 255);
+  margin-top: 20px;
+  padding-top: 18px;
+}
+
+.videoLabel {
+  color: oklch(0.42 0.012 255);
+  font-size: 13px;
+  font-weight: 750;
+  margin: 0 0 10px;
+}
+
+.videoList {
+  gap: 12px;
+}
+
+.videoTitle {
+  color: oklch(0.22 0.006 255);
+  font-size: 16px;
+  font-weight: 750;
+  margin: 0 0 5px;
+}
+
+.videoDescription {
+  color: oklch(0.42 0.012 255);
+  line-height: 1.6;
+  margin: 0 0 12px;
+}
+
+.videoButton {
+  background: oklch(0.26 0.008 255);
+  border-radius: 6px;
+  color: oklch(0.985 0.003 255);
+  display: inline-flex;
+  font-weight: 750;
+  padding: 10px 14px;
+  text-decoration: none;
+}
+
+.videoButton:hover {
+  background: oklch(0.34 0.012 255);
+}
+
+@media (max-width: 640px) {
+  .shell {
+    padding: 28px 14px 48px;
+  }
+
+  .title {
+    font-size: 28px;
+  }
+
+  .summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .summaryAction {
+    align-self: flex-start;
+  }
+}
