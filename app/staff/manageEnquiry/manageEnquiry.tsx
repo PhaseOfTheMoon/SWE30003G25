@@ -36,8 +36,9 @@ export default function StaffEnquiriesPage() {
 
   async function loadVets() {
     const { data } = await supabase
-      .from('veterinarian')
-      .select('id, profiles(name)')
+      .from('profiles')
+      .select('id, name')
+      .eq('role', 'vet')
     if (data) {
       setVets(data.map((v: any) => ({ vetID: v.id, name: v.profiles?.name ?? 'Unknown' })))
     }

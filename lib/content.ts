@@ -22,11 +22,11 @@ export type Guide = {
 
 // EducationalVideo — maps to Video table in the UML (videoID, title, videoURL, duration)
 export type EducationalVideo = {
-  videoID:     string
-  contentID:   string
-  title:       string
-  videoUrl:    string
-  duration?:   string | null
+  videoID: string
+  contentID: string
+  title: string
+  videoUrl: string
+  duration?: string | null
   description?:string | null
 }
 
@@ -52,7 +52,7 @@ export type ContentReview = {
   reviewID:     string
   contentID:    string
   vetID:        string
-  status:       'pending' | 'validated' | 'rejected'
+  status:       'pending' | 'validated' | 'rejected' | 'published'
   comment?:     string | null
   reviewedDate?:string | null
 }
@@ -96,25 +96,24 @@ export async function createFirstAidContent(payload: {
   return data
 }
 
-// Guest / PetOwner: get all pet types with content
+// Guest / PetOwner: get all pet types with published content
 export async function getPetTypes(): Promise<string[]> {
-  // Query from content_review so we only surface validated content
   const { data, error } = await supabase
     .from('content_review')
     .select('first_aid_content(petType)')
-    .eq('status', 'validated')
+    .eq('status', 'published')
   if (error) throw new Error(error.message)
   return [...new Set(
     (data ?? []).map((r: any) => r.first_aid_content?.petType).filter(Boolean)
   )]
 }
 
-// Guest / PetOwner: get emergency categories for a given pet type (validated only)
+// Guest / PetOwner: get emergency categories for a given pet type (published only)
 export async function getEmergencyCategories(petType: string): Promise<string[]> {
   const { data, error } = await supabase
     .from('content_review')
     .select('first_aid_content(emergencyCategory, petType)')
-    .eq('status', 'validated')
+    .eq('status', 'published')
   if (error) throw new Error(error.message)
   return [...new Set(
     (data ?? [])
@@ -131,7 +130,7 @@ export async function viewPublishedFirstAidContent(): Promise<FirstAidContentBun
   const { data, error } = await supabase
     .from('content_review')
     .select('first_aid_content(*, guide(*), educational_video(*))')
-    .eq('status', 'validated')
+    .eq('status', 'published')
   if (error) throw new Error(error.message)
   const rows = (data ?? [])
     .map((r: any) => r.first_aid_content)
@@ -216,7 +215,7 @@ export async function createEducationalVideo(payload: {
   description?: string
 }): Promise<EducationalVideo> {
   const { data, error } = await supabase
-    .from('video')
+    .from('educational_video')
     .insert(payload)
     .select()
     .single()
@@ -226,9 +225,9 @@ export async function createEducationalVideo(payload: {
 
 // Staff: update an educational video
 export async function updateEducationalVideo(
-  videoID:      string,
-  title:        string,
-  videoUrl:     string,
+  videoID: string,
+  title: string,
+  videoUrl: string,
   description?: string,
 ): Promise<EducationalVideo> {
   const { data, error } = await supabase
@@ -429,6 +428,24 @@ export async function validateContent(
   return data
 }
 
+// Staff: publish a validated content record — makes it publicly visible
+export async function publishContent(
+  reviewID: string,
+): Promise<ContentReview> {
+  const { data, error } = await supabase
+    .from('content_review')
+    .update({
+      status: 'published',
+      reviewedDate: new Date().toISOString(),
+    })
+    .eq('reviewID', reviewID)
+    .eq('status', 'validated')   // safety: only allow publishing validated content
+    .select()
+    .single()
+  if (error) throw new Error(error.message)
+  return data
+}
+
 // Vet: reject a content review
 export async function rejectContent(
   reviewID: string,
@@ -442,6 +459,105 @@ export async function rejectContent(
       reviewedDate: new Date().toISOString(),
     })
     .eq('reviewID', reviewID)
+    .select()
+    .single()
+  if (error) throw new Error(error.message)
+  return data
+}
+
+// Staff: view all content reviews for content submitted by this staff member
+// Returns content_review rows (with nested first_aid_content + guide/video/quiz)
+// so the pending review page can read review.status, review.comment, review.reviewID etc.
+export async function viewStaffContent(staffID: string): Promise<any[]> {
+  // First get all contentIDs belonging to this staff member
+  const { data: staffContent, error: contentErr } = await supabase
+    .from('first_aid_content')
+    .select('contentID')
+    .eq('staffID', staffID)
+  if (contentErr) throw new Error(contentErr.message)
+  if (!staffContent || staffContent.length === 0) return []
+
+  const contentIDs = staffContent.map((r: any) => r.contentID)
+
+  // Then fetch all content_review rows for those contentIDs, with full nested data
+  const { data, error } = await supabase
+    .from('content_review')
+    .select(`
+      *,
+      first_aid_content (
+        contentID,
+        petType,
+        emergencyCategory,
+        lastUpdateDate,
+        guide (*),
+        quiz (*),
+        educational_video (*)
+      )
+    `)
+    .in('contentID', contentIDs)
+    .order('reviewedDate', { ascending: false })
+  if (error) throw new Error(error.message)
+
+  // Flatten so the page can access guide/video/quiz directly on the review object
+  return (data ?? []).map((r: any) => ({
+    ...r,
+    guide: r.first_aid_content?.guide ?? [],
+    quiz: r.first_aid_content?.quiz ?? [],
+    educational_video: r.first_aid_content?.educational_video ?? [],
+  }))
+}
+
+// Staff: edit guide steps on a validated content record, then send back for vet re-validation
+export async function editGuideAndResubmit(
+  reviewID: string,
+  stepEdits: Array<{ guideID: string; title: string; instruction: string; videoUrl?: string }>,
+): Promise<ContentReview> {
+  for (const step of stepEdits) {
+    await updateGuide(step.guideID, step.title, step.instruction, step.videoUrl)
+  }
+  const { data: original, error: fetchErr } = await supabase
+    .from('content_review')
+    .select('contentID, vetID')
+    .eq('reviewID', reviewID)
+    .single()
+  if (fetchErr) throw new Error(fetchErr.message)
+  const { data, error } = await supabase
+    .from('content_review')
+    .insert({ contentID: original.contentID, vetID: original.vetID, status: 'pending' })
+    .select()
+    .single()
+  if (error) throw new Error(error.message)
+  return data
+}
+
+// Staff: delete a full content bundle (guide/video/quiz + review + parent record)
+export async function deleteFullContent(contentID: string): Promise<void> {
+  await supabase.from('guide').delete().eq('contentID', contentID)
+  await supabase.from('educational_video').delete().eq('contentID', contentID)
+  await supabase.from('quiz').delete().eq('contentID', contentID)
+  await supabase.from('content_review').delete().eq('contentID', contentID)
+  const { error } = await supabase.from('first_aid_content').delete().eq('contentID', contentID)
+  if (error) throw new Error(error.message)
+}
+
+// Staff: resubmit a rejected content record for re-validation by inserting a new pending review
+// Takes the reviewID of the rejected review to find the contentID and vetID, then creates a new pending review
+export async function resubmitContent(
+  reviewID: string,
+  draft: { title: string; instruction: string },
+): Promise<ContentReview> {
+  // Look up the original review to get contentID and vetID
+  const { data: original, error: fetchErr } = await supabase
+    .from('content_review')
+    .select('contentID, vetID')
+    .eq('reviewID', reviewID)
+    .single()
+  if (fetchErr) throw new Error(fetchErr.message)
+
+  // Insert a new pending review for the same content + vet
+  const { data, error } = await supabase
+    .from('content_review')
+    .insert({ contentID: original.contentID, vetID: original.vetID, status: 'pending' })
     .select()
     .single()
   if (error) throw new Error(error.message)

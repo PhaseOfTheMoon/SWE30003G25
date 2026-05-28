@@ -19,10 +19,20 @@ type Step = 'pet' | 'category' | 'guide'
 function toEmbedUrl(url: string): string | null {
   try {
     const u = new URL(url)
-    if (u.hostname === 'youtu.be') return `https://www.youtube.com/embed/${u.pathname.slice(1)}`
+    if (u.hostname === 'youtu.be') {
+      const id = u.pathname.slice(1).split('/')[0]
+      return id ? `https://www.youtube.com/embed/${id}` : null
+    }
     if (u.hostname.includes('youtube.com')) {
-      if (u.pathname === '/watch') return `https://www.youtube.com/embed/${u.searchParams.get('v')}`
+      if (u.pathname === '/watch') {
+        const v = u.searchParams.get('v')
+        return v ? `https://www.youtube.com/embed/${v}` : null
+      }
       if (u.pathname.startsWith('/embed/')) return url
+      if (u.pathname.startsWith('/shorts/')) {
+        const id = u.pathname.split('/shorts/')[1]?.split('/')[0]
+        return id ? `https://www.youtube.com/embed/${id}` : null
+      }
     }
   } catch {}
   return null
@@ -44,25 +54,54 @@ export default function GuidePage() {
   const [guides, setGuides] = useState<Guide[]>([])
   const [video, setVideo] = useState<EducationalVideo | null>(null)
 
-  const [selectedPet, setSelectedPet]           = useState('')
+  const [selectedPet, setSelectedPet] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
-  const [contentID, setContentID]               = useState('')
+  const [contentID, setContentID] = useState('')
 
-  const [loadingPets, setLoadingPets]   = useState(true)
-  const [loadingCats, setLoadingCats]   = useState(false)
+  const [loadingPets, setLoadingPets] = useState(true)
+  const [loadingCats, setLoadingCats] = useState(false)
   const [loadingGuide, setLoadingGuide] = useState(false)
-  const [activeStep, setActiveStep]     = useState(0)
-  const [error, setError]               = useState('')
+  const [activeStep, setActiveStep] = useState(0)
+  const [error, setError] = useState('')
 
-  // Step 1: load all pet types (no validation filter — shows all data)
+  // Step 1: load pet types that have at least one validated content record
   useEffect(() => {
-    getPetTypes()
-      .then(setPetTypes)
-      .catch(e => setError(e.message))
-      .finally(() => setLoadingPets(false))
+    async function loadValidatedPetTypes() {
+      try {
+        const { data: reviewed, error: revErr } = await supabase
+          .from('content_review')
+          .select('contentID')
+          .eq('status', 'published')
+        if (revErr) throw new Error(revErr.message)
+        const publishedIDs = (reviewed ?? []).map((r: any) => r.contentID)
+        if (publishedIDs.length === 0) { setPetTypes([]); return }
+
+        // Only show pet types that have actual guide steps
+        const { data: guideRows, error: guideErr } = await supabase
+          .from('guide')
+          .select('contentID')
+          .in('contentID', publishedIDs)
+        if (guideErr) throw new Error(guideErr.message)
+        const guideContentIDs = [...new Set((guideRows ?? []).map((r: any) => r.contentID))]
+        if (guideContentIDs.length === 0) { setPetTypes([]); return }
+
+        const { data, error: err } = await supabase
+          .from('first_aid_content')
+          .select('petType')
+          .in('contentID', guideContentIDs)
+        if (err) throw new Error(err.message)
+        const pets = [...new Set((data ?? []).map((r: any) => r.petType))].sort()
+        setPetTypes(pets)
+      } catch (e: any) {
+        setError(e.message)
+      } finally {
+        setLoadingPets(false)
+      }
+    }
+    loadValidatedPetTypes()
   }, [])
 
-  // Step 2: select a pet → load its emergency categories
+  // Step 2: select a pet → load its emergency categories (validated only)
   async function handleSelectPet(pet: string) {
     setSelectedPet(pet)
     setSelectedCategory('')
@@ -72,7 +111,31 @@ export default function GuidePage() {
     setLoadingCats(true)
     setError('')
     try {
-      const cats = await getEmergencyCategories(pet)
+      const { data: reviewed, error: revErr } = await supabase
+        .from('content_review')
+        .select('contentID')
+        .eq('status', 'published')
+      if (revErr) throw new Error(revErr.message)
+      const publishedIDs = (reviewed ?? []).map((r: any) => r.contentID)
+      if (publishedIDs.length === 0) { setCategories([]); return }
+
+      // Only show categories that have actual guide steps
+      const { data: guideRows, error: guideErr } = await supabase
+        .from('guide')
+        .select('contentID')
+        .in('contentID', publishedIDs)
+      if (guideErr) throw new Error(guideErr.message)
+      const guideContentIDs = [...new Set((guideRows ?? []).map((r: any) => r.contentID))]
+      if (guideContentIDs.length === 0) { setCategories([]); return }
+
+      const { data, error: err } = await supabase
+        .from('first_aid_content')
+        .select('contentID, emergencyCategory')
+        .eq('petType', pet)
+        .in('contentID', guideContentIDs)
+      if (err) throw new Error(err.message)
+
+      const cats = [...new Set((data ?? []).map((r: any) => r.emergencyCategory))].sort()
       setCategories(cats)
     } catch (e: any) {
       setError(e.message)
@@ -81,7 +144,7 @@ export default function GuidePage() {
     }
   }
 
-  // Step 3: select a category → load guide steps + optional video
+  // Step 3: select a category → load guide steps + optional video (validated only)
   async function handleSelectCategory(category: string) {
     setSelectedCategory(category)
     setStep('guide')
@@ -89,16 +152,32 @@ export default function GuidePage() {
     setError('')
     setActiveStep(0)
     try {
-      const { data, error: err } = await supabase
+      // Get the most recently validated contentID for this pet + category
+      const { data: reviewed, error: revErr } = await supabase
+        .from('content_review')
+        .select('contentID, reviewedDate')
+        .eq('status', 'published')
+        .order('reviewedDate', { ascending: false })
+      if (revErr) throw new Error(revErr.message)
+      const validatedIDs = (reviewed ?? []).map((r: any) => r.contentID)
+      if (validatedIDs.length === 0) { setGuides([]); return }
+
+      // Find all validated records for this pet + category, pick the most recently validated
+      const { data: allMatches, error: err } = await supabase
         .from('first_aid_content')
         .select('contentID')
         .eq('petType', selectedPet)
         .eq('emergencyCategory', category)
-        .limit(1)
+        .in('contentID', validatedIDs)
       if (err) throw new Error(err.message)
-      if (!data || data.length === 0) { setGuides([]); return }
-      const cid = data[0].contentID
+      if (!allMatches || allMatches.length === 0) { setGuides([]); return }
+
+      // Pick the one that was validated most recently
+      const matchIDs = allMatches.map((r: any) => r.contentID)
+      const bestReview = (reviewed ?? []).find((r: any) => matchIDs.includes(r.contentID))
+      const cid = bestReview?.contentID ?? matchIDs[0]
       setContentID(cid)
+
       const { data: vidData, error: vidErr } = await supabase
         .from('educational_video')
         .select('*')
@@ -260,10 +339,10 @@ export default function GuidePage() {
               <div className={styles.loadingList}>
                 {[0, 1, 2].map(i => <div key={i} className={styles.loadingRow} />)}
               </div>
-            ) : guides.length === 0 && !video ? (
+            ) : guides.length === 0 ? (
               <div className={styles.emptyState}>
                 <h2>No guide steps found</h2>
-                <p>No steps available for this category yet.</p>
+                <p>This category has no step-by-step guide. Check the Educational Videos section instead.</p>
               </div>
             ) : (
               <div className={styles.contentList}>
@@ -283,23 +362,6 @@ export default function GuidePage() {
 
                   <div className={styles.panel}>
 
-                    {/* Step number navigator */}
-                    {guides.length > 1 && (
-                      <div className={styles.stepNav}>
-                        {guides.map((g, i) => (
-                          <button
-                            key={g.guideID}
-                            type="button"
-                            onClick={() => setActiveStep(i)}
-                            className={`${styles.stepNavBtn} ${activeStep === i ? styles.stepNavBtnActive : ''}`}
-                            aria-label={`Go to step ${g.stepNumber}`}
-                          >
-                            {g.stepNumber}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
                     {/* Guide steps */}
                     {guides.length > 0 && (
                       <ol className={styles.steps}>
@@ -313,14 +375,27 @@ export default function GuidePage() {
                               <strong className={styles.stepTitle}>{g.title}</strong>
                               <span className={styles.stepText}>{g.instruction}</span>
                               {g.videoUrl && (
-                                <a
-                                  href={g.videoUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className={styles.stepLink}
-                                >
-                                  Open step demo
-                                </a>
+                                toEmbedUrl(g.videoUrl) ? (
+                                  <div className={styles.stepVideoEmbed}>
+                                    <iframe
+                                      className={styles.videoIframe}
+                                      src={toEmbedUrl(g.videoUrl)!}
+                                      title={`Step ${g.stepNumber} demo`}
+                                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                      allowFullScreen
+                                    />
+                                  </div>
+                                ) : (
+                                  <a
+                                    href={g.videoUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className={styles.videoFallback}
+                                    style={{ marginTop: '8px' }}
+                                  >
+                                    Open step demo ↗
+                                  </a>
+                                )
                               )}
                             </span>
                           </li>

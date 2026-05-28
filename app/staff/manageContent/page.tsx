@@ -22,7 +22,7 @@ import {
 } from '@/lib/content'
 import { STAFF_NAV } from '@/app/components/sidebar'
 
-const PET_TYPES = ['Dog', 'Cat', 'Bird', 'Rabbit', 'Other']
+const PET_TYPES = ['Dog', 'Cat', 'Bird', 'Rabbit', 'Small Pets']
 const CATEGORIES = ['Choking', 'Bleeding', 'Burns', 'Fracture', 'Poisoning', 'Seizure']
 
 type ContentType = 'guide' | 'video' | 'quiz'
@@ -246,7 +246,7 @@ export default function StaffContentPage() {
   }
 
   return (
-    <DashboardLayout role="Staff" name="Alex Wong" navItems={STAFF_NAV}>
+    <DashboardLayout role="Staff" navItems={STAFF_NAV}>
       <div style={{ maxWidth: '720px', margin: '0 auto' }}>
 
         <div style={{ marginBottom: '28px' }}>

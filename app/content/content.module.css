@@ -297,6 +297,17 @@
   margin-bottom: 8px;
 }
 
+.stepVideoEmbed {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  padding-bottom: min(56.25%, 202px);
+  border-radius: 8px;
+  overflow: hidden;
+  background: oklch(0.1 0 0);
+  margin-top: 10px;
+}
+
 .videoIframe {
   position: absolute;
   inset: 0;

@@ -8,59 +8,71 @@ import supabase from "../../lib/supabase";
 export default function Navbar() {
   const router = useRouter();
 
-  // Store the logged in user, null means not logged in
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [user, setUser] = useState<{ id: string; name: string; email: string; role: string } | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    // Check if there is already a session when the page loads
     async function getUser() {
       const { data: sessionData } = await supabase.auth.getSession();
       if (sessionData.session) {
         const userId = sessionData.session.user.id;
-
-        // Get the user name from profiles table
         const { data: profile } = await supabase
           .from("profiles")
-          .select("name, email")
+          .select("name, email, role")
           .eq("id", userId)
           .single();
-
         if (profile) {
-          setUser({ name: profile.name, email: profile.email });
+          setUser({ id: userId, name: profile.name, email: profile.email, role: profile.role ?? "" });
+          fetchUnread(userId);
         }
       }
     }
 
     getUser();
 
-    // Listen for login or logout changes
     const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session) {
         const { data: profile } = await supabase
           .from("profiles")
-          .select("name, email")
+          .select("name, email, role")
           .eq("id", session.user.id)
           .single();
-
         if (profile) {
-          setUser({ name: profile.name, email: profile.email });
+          setUser({ id: session.user.id, name: profile.name, email: profile.email, role: profile.role ?? "" });
+          fetchUnread(session.user.id);
         }
       } else {
         setUser(null);
+        setUnreadCount(0);
       }
     });
 
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  // Handle logout
+  // Fetch responded enquiries and compare against seen IDs in localStorage
+  async function fetchUnread(userId: string) {
+    const { data } = await supabase
+      .from("enquiry")
+      .select("enquiryID")
+      .eq("petOwnerID", userId)
+      .eq("status", "responded");
+
+    if (!data) return;
+
+    const seenRaw = localStorage.getItem(`seen_responses_${userId}`);
+    const seen: string[] = seenRaw ? JSON.parse(seenRaw) : [];
+    const unread = data.filter(e => !seen.includes(e.enquiryID));
+    setUnreadCount(unread.length);
+  }
+
   async function handleLogout() {
     await supabase.auth.signOut();
     setUser(null);
+    setUnreadCount(0);
     router.push("/");
   }
 
-  // Get the first letter of the user name to use as avatar
   const avatarLetter = user?.name ? user.name.charAt(0).toUpperCase() : "";
 
   return (
@@ -69,18 +81,46 @@ export default function Navbar() {
         <div style={{ fontSize: "22px", fontWeight: "bold", color: "#dc2626" }}>
           🐾 PetFirstAid
         </div>
-        <div style={{ display: "flex", gap: "24px", fontSize: "15px" }}>
-          <Link href="/" style={{ color: "#374151", textDecoration: "none" }}>Home</Link>
-          <Link href="/about" style={{ color: "#374151", textDecoration: "none" }}>About</Link>
-          <Link href="/guide" style={{ color: "#374151", textDecoration: "none" }}>First-Aid Guide</Link>
-          <Link href="/emergency" style={{ color: "#374151", textDecoration: "none" }}>Emergency</Link>
-          <Link href="/contact" style={{ color: "#374151", textDecoration: "none" }}>Contact</Link>
-        </div>
 
-        {/* Show login and register if not logged in, show profile and logout if logged in */}
+        {user?.role === "staff" || user?.role === "veterinarian" ? (
+          <div style={{ padding: "6px 18px", border: "1px solid #d1d5db", borderRadius: "999px", fontSize: "14px", color: "#374151", backgroundColor: "#f9fafb" }}>
+            {user.role === "staff" ? "Staff Portal" : "Vet Portal"}
+          </div>
+        ) : (
+          <div style={{ display: "flex", gap: "24px", fontSize: "15px" }}>
+            <Link href="/" style={{ color: "#374151", textDecoration: "none" }}>Home</Link>
+            <Link href="/about" style={{ color: "#374151", textDecoration: "none" }}>About</Link>
+            <Link href="/guide" style={{ color: "#374151", textDecoration: "none" }}>First-Aid Guide</Link>
+            <Link href="/emergency" style={{ color: "#374151", textDecoration: "none" }}>Emergency</Link>
+            <Link href="/contact" style={{ color: "#374151", textDecoration: "none" }}>Contact</Link>
+          </div>
+        )}
+
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           {user ? (
             <>
+              {/* Bell notification icon — only shown when logged in */}
+              <Link
+                href="/enquiry"
+                title="View enquiry replies"
+                style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", width: "36px", height: "36px", borderRadius: "50%", backgroundColor: unreadCount > 0 ? "#fef2f2" : "#f9fafb", border: unreadCount > 0 ? "1px solid #fecaca" : "1px solid #e5e7eb", textDecoration: "none", transition: "all 0.15s" }}
+              >
+                <span style={{ fontSize: "16px" }}>🔔</span>
+                {unreadCount > 0 && (
+                  <span style={{
+                    position: "absolute", top: "-4px", right: "-4px",
+                    backgroundColor: "#dc2626", color: "white",
+                    fontSize: "10px", fontWeight: "700",
+                    borderRadius: "999px", minWidth: "16px", height: "16px",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    padding: "0 3px", lineHeight: 1,
+                    boxShadow: "0 0 0 2px white",
+                  }}>
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </Link>
+
               <Link href="/profile" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none", color: "#374151", fontSize: "14px" }}>
                 <div style={{ width: "32px", height: "32px", borderRadius: "50%", backgroundColor: "#dc2626", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", fontSize: "14px" }}>
                   {avatarLetter}

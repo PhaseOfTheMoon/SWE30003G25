@@ -5,9 +5,6 @@ import Link from 'next/link'
 import Navbar from '@/app/components/Navbar'
 import Footer from '@/app/components/Footer'
 import {
-  getPetTypes,
-  getEmergencyCategories,
-  viewVideo,
   type EducationalVideo,
 } from '@/lib/content'
 import supabase from '@/lib/supabase'
@@ -50,15 +47,31 @@ export default function VideoPage() {
   const [loadingVideo, setLoadingVideo] = useState(false)
   const [error, setError] = useState('')
 
-  // Fetch available pet types — UML: FirstAidContent.getPetTypes()
+  // Fetch available pet types — validated only
   useEffect(() => {
-    getPetTypes()
-      .then(setPetTypes)
-      .catch(e => setError(e.message))
-      .finally(() => setLoadingPets(false))
+    async function loadValidatedPetTypes() {
+      try {
+        const { data: reviewed, error: revErr } = await supabase
+          .from('content_review').select('contentID').eq('status', 'published')
+        if (revErr) throw new Error(revErr.message)
+        const validatedIDs = (reviewed ?? []).map((r: any) => r.contentID)
+        if (validatedIDs.length === 0) { setPetTypes([]); return }
+
+        const { data, error: err } = await supabase
+          .from('first_aid_content').select('petType').in('contentID', validatedIDs)
+        if (err) throw new Error(err.message)
+        const pets = [...new Set((data ?? []).map((r: any) => r.petType))].sort()
+        setPetTypes(pets)
+      } catch (e: any) {
+        setError(e.message)
+      } finally {
+        setLoadingPets(false)
+      }
+    }
+    loadValidatedPetTypes()
   }, [])
 
-  // Fetch categories for selected pet — UML: FirstAidContent.getEmergencyCategories()
+  // Fetch categories for selected pet — validated only
   async function handleSelectPet(pet: string) {
     setSelectedPet(pet)
     setSelectedCategory('')
@@ -67,7 +80,19 @@ export default function VideoPage() {
     setLoadingCats(true)
     setError('')
     try {
-      setCats(await getEmergencyCategories(pet))
+      const { data: reviewed, error: revErr } = await supabase
+        .from('content_review').select('contentID').eq('status', 'published')
+      if (revErr) throw new Error(revErr.message)
+      const validatedIDs = (reviewed ?? []).map((r: any) => r.contentID)
+      if (validatedIDs.length === 0) { setCats([]); return }
+
+      const { data, error: err } = await supabase
+        .from('first_aid_content').select('contentID, emergencyCategory').eq('petType', pet)
+      if (err) throw new Error(err.message)
+
+      const filtered = (data ?? []).filter((r: any) => validatedIDs.includes(r.contentID))
+      const cats = [...new Set(filtered.map((r: any) => r.emergencyCategory))].sort()
+      setCats(cats)
     } catch (e: any) {
       setError(e.message)
     } finally {
@@ -75,23 +100,39 @@ export default function VideoPage() {
     }
   }
 
-  // Fetch video for selected pet + category — UML: Video.viewVideo()
+  // Fetch video for selected pet + category — validated content only
   async function handleSelectCategory(cat: string) {
     setSelectedCategory(cat)
     setStep('video')
     setLoadingVideo(true)
     setError('')
     try {
+      // Join through content_review to only surface validated content
+      const { data: reviewed, error: revErr } = await supabase
+        .from('content_review')
+        .select('contentID')
+        .eq('status', 'published')
+      if (revErr) throw new Error(revErr.message)
+      const validatedIDs = (reviewed ?? []).map((r: any) => r.contentID)
+      if (validatedIDs.length === 0) { setVideo(null); return }
+
       const { data, error: err } = await supabase
         .from('first_aid_content')
         .select('contentID')
         .eq('petType', selectedPet)
         .eq('emergencyCategory', cat)
+        .in('contentID', validatedIDs)
         .limit(1)
       if (err) throw new Error(err.message)
       if (!data || data.length === 0) { setVideo(null); return }
-      const vid = await viewVideo(data[0].contentID)
-      setVideo(vid)
+
+      const { data: vidData, error: vidErr } = await supabase
+        .from('educational_video')
+        .select('*')
+        .eq('contentID', data[0].contentID)
+        .maybeSingle()
+      if (vidErr) throw new Error(vidErr.message)
+      setVideo(vidData ?? null)
     } catch (e: any) {
       setError(e.message)
     } finally {

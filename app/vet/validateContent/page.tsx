@@ -104,7 +104,7 @@ export default function ValidateContentPage() {
   }
 
   return (
-    <DashboardLayout role="Veterinarian" name="Veterinarian" navItems={VET_NAV}>
+    <DashboardLayout role="Veterinarian" navItems={VET_NAV}>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Validate Content</h1>
 
       {/* Tabs */}
