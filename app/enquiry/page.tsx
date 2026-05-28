@@ -1,71 +1,51 @@
 "use client";
 
 import { useState } from "react";
+import supabase from "@/lib/supabase";
 
 type Enquiry = {
   enquiryID: string;
   subject: string;
   message: string;
-  status: "Pending" | "Responded";
-  response: string;
+  status: string;
+  response: string | null;
 };
 
 export default function EnquiryPage() {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
-  const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
-  const [editingID, setEditingID] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
 
-  const createEnquiry = () => {
+  const createEnquiry = async () => {
     if (!subject || !message) {
       alert("Please fill in both subject and message.");
       return;
     }
 
+    setLoading(true);
+
     const newEnquiry: Enquiry = {
-      enquiryID: "ENQ" + Date.now(),
-      subject,
-      message,
-      status: "Pending",
-      response: "No response yet.",
+      enquiryID: crypto.randomUUID(),
+      subject: subject,
+      message: message,
+      status: "pending",
+      response: null,
     };
 
-    setEnquiries([...enquiries, newEnquiry]);
+    const { error } = await supabase.from("enquiry").insert([newEnquiry]);
+
+    setLoading(false);
+
+    if (error) {
+      console.error("Insert error:", error.message);
+      alert("Failed to submit enquiry.");
+      return;
+    }
+
     setSubject("");
     setMessage("");
-  };
-
-  const updateEnquiry = () => {
-    if (!editingID) return;
-
-    const updatedEnquiries = enquiries.map((enquiry) =>
-      enquiry.enquiryID === editingID
-        ? {
-            ...enquiry,
-            subject,
-            message,
-          }
-        : enquiry
-    );
-
-    setEnquiries(updatedEnquiries);
-    setSubject("");
-    setMessage("");
-    setEditingID(null);
-  };
-
-  const deleteEnquiry = (enquiryID: string) => {
-    const remainingEnquiries = enquiries.filter(
-      (enquiry) => enquiry.enquiryID !== enquiryID
-    );
-
-    setEnquiries(remainingEnquiries);
-  };
-
-  const startEdit = (enquiry: Enquiry) => {
-    setSubject(enquiry.subject);
-    setMessage(enquiry.message);
-    setEditingID(enquiry.enquiryID);
+    setShowPopup(true);
   };
 
   return (
@@ -76,9 +56,74 @@ export default function EnquiryPage() {
         padding: "40px 20px",
       }}
     >
+      {showPopup && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(0,0,0,0.45)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 9999,
+          }}
+        >
+          <div
+            style={{
+              width: "90%",
+              maxWidth: "430px",
+              backgroundColor: "white",
+              borderRadius: "18px",
+              padding: "32px",
+              textAlign: "center",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
+            }}
+          >
+            <h2
+              style={{
+                fontSize: "26px",
+                fontWeight: "bold",
+                marginBottom: "14px",
+                color: "#111827",
+              }}
+            >
+              Enquiry Submitted
+            </h2>
+
+            <p
+              style={{
+                fontSize: "16px",
+                color: "#374151",
+                lineHeight: "1.6",
+                marginBottom: "24px",
+              }}
+            >
+              Thank you for submitting your enquiry. We will get back with you as
+              soon as possible.
+            </p>
+
+            <button
+              onClick={() => setShowPopup(false)}
+              style={{
+                width: "100%",
+                backgroundColor: "#2563eb",
+                color: "white",
+                padding: "14px",
+                borderRadius: "12px",
+                border: "none",
+                fontWeight: "600",
+                cursor: "pointer",
+              }}
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
       <div
         style={{
-          maxWidth: "900px",
+          maxWidth: "800px",
           margin: "0 auto",
           backgroundColor: "white",
           borderRadius: "16px",
@@ -104,11 +149,18 @@ export default function EnquiryPage() {
             fontSize: "16px",
           }}
         >
-          Submit your enquiry and wait for a response from the staff or veterinarian.
+          Submit your enquiry and wait for a response from staff or veterinarian.
         </p>
 
         <div style={{ marginBottom: "24px" }}>
-          <label style={{ fontWeight: "600", display: "block", marginBottom: "8px" }}>
+          <label
+            style={{
+              fontWeight: "600",
+              display: "block",
+              marginBottom: "8px",
+              color: "#111827",
+            }}
+          >
             Subject
           </label>
 
@@ -128,7 +180,14 @@ export default function EnquiryPage() {
         </div>
 
         <div style={{ marginBottom: "24px" }}>
-          <label style={{ fontWeight: "600", display: "block", marginBottom: "8px" }}>
+          <label
+            style={{
+              fontWeight: "600",
+              display: "block",
+              marginBottom: "8px",
+              color: "#111827",
+            }}
+          >
             Message
           </label>
 
@@ -149,113 +208,22 @@ export default function EnquiryPage() {
         </div>
 
         <button
-          onClick={editingID ? updateEnquiry : createEnquiry}
+          onClick={createEnquiry}
+          disabled={loading}
           style={{
             width: "100%",
-            backgroundColor: editingID ? "#f59e0b" : "#2563eb",
+            backgroundColor: loading ? "#93c5fd" : "#2563eb",
             color: "white",
             padding: "16px",
             borderRadius: "12px",
             border: "none",
             fontWeight: "600",
             fontSize: "16px",
-            cursor: "pointer",
-            marginBottom: "34px",
+            cursor: loading ? "not-allowed" : "pointer",
           }}
         >
-          {editingID ? "Update Enquiry" : "Submit Enquiry"}
+          {loading ? "Submitting..." : "Submit Enquiry"}
         </button>
-
-        <h2
-          style={{
-            fontSize: "24px",
-            fontWeight: "bold",
-            marginBottom: "18px",
-            color: "#111827",
-          }}
-        >
-          Submitted Enquiries
-        </h2>
-
-        {enquiries.length === 0 ? (
-          <p style={{ color: "#6b7280" }}>No enquiries submitted yet.</p>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
-            {enquiries.map((enquiry) => (
-              <div
-                key={enquiry.enquiryID}
-                style={{
-                  padding: "22px",
-                  borderRadius: "12px",
-                  border: "1px solid #e5e7eb",
-                  backgroundColor: "#fafafa",
-                }}
-              >
-                <p style={{ color: "#6b7280", marginBottom: "6px" }}>
-                  Enquiry ID: {enquiry.enquiryID}
-                </p>
-
-                <h3
-                  style={{
-                    fontSize: "20px",
-                    fontWeight: "bold",
-                    marginBottom: "8px",
-                    color: "#111827",
-                  }}
-                >
-                  {enquiry.subject}
-                </h3>
-
-                <p style={{ marginBottom: "12px", color: "#374151" }}>
-                  {enquiry.message}
-                </p>
-
-                <p style={{ marginBottom: "8px" }}>
-                  <strong>Status:</strong>{" "}
-                  <span style={{ color: "#d97706", fontWeight: "600" }}>
-                    {enquiry.status}
-                  </span>
-                </p>
-
-                <p style={{ marginBottom: "18px" }}>
-                  <strong>Response:</strong> {enquiry.response}
-                </p>
-
-                <div style={{ display: "flex", gap: "12px" }}>
-                  <button
-                    onClick={() => startEdit(enquiry)}
-                    style={{
-                      backgroundColor: "#f59e0b",
-                      color: "white",
-                      padding: "10px 16px",
-                      borderRadius: "8px",
-                      border: "none",
-                      cursor: "pointer",
-                      fontWeight: "600",
-                    }}
-                  >
-                    Edit
-                  </button>
-
-                  <button
-                    onClick={() => deleteEnquiry(enquiry.enquiryID)}
-                    style={{
-                      backgroundColor: "#dc2626",
-                      color: "white",
-                      padding: "10px 16px",
-                      borderRadius: "8px",
-                      border: "none",
-                      cursor: "pointer",
-                      fontWeight: "600",
-                    }}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
