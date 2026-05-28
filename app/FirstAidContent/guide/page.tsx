@@ -61,15 +61,24 @@ export default function GuidePage() {
         const { data: reviewed, error: revErr } = await supabase
           .from('content_review')
           .select('contentID')
-          .eq('status', 'validated')
+          .eq('status', 'published')
         if (revErr) throw new Error(revErr.message)
-        const validatedIDs = (reviewed ?? []).map((r: any) => r.contentID)
-        if (validatedIDs.length === 0) { setPetTypes([]); return }
+        const publishedIDs = (reviewed ?? []).map((r: any) => r.contentID)
+        if (publishedIDs.length === 0) { setPetTypes([]); return }
+
+        // Only show pet types that have actual guide steps
+        const { data: guideRows, error: guideErr } = await supabase
+          .from('guide')
+          .select('contentID')
+          .in('contentID', publishedIDs)
+        if (guideErr) throw new Error(guideErr.message)
+        const guideContentIDs = [...new Set((guideRows ?? []).map((r: any) => r.contentID))]
+        if (guideContentIDs.length === 0) { setPetTypes([]); return }
 
         const { data, error: err } = await supabase
           .from('first_aid_content')
           .select('petType')
-          .in('contentID', validatedIDs)
+          .in('contentID', guideContentIDs)
         if (err) throw new Error(err.message)
         const pets = [...new Set((data ?? []).map((r: any) => r.petType))].sort()
         setPetTypes(pets)
@@ -92,23 +101,31 @@ export default function GuidePage() {
     setLoadingCats(true)
     setError('')
     try {
-      // Only show categories that have validated content
       const { data: reviewed, error: revErr } = await supabase
         .from('content_review')
         .select('contentID')
-        .eq('status', 'validated')
+        .eq('status', 'published')
       if (revErr) throw new Error(revErr.message)
-      const validatedIDs = (reviewed ?? []).map((r: any) => r.contentID)
-      if (validatedIDs.length === 0) { setCategories([]); return }
+      const publishedIDs = (reviewed ?? []).map((r: any) => r.contentID)
+      if (publishedIDs.length === 0) { setCategories([]); return }
+
+      // Only show categories that have actual guide steps
+      const { data: guideRows, error: guideErr } = await supabase
+        .from('guide')
+        .select('contentID')
+        .in('contentID', publishedIDs)
+      if (guideErr) throw new Error(guideErr.message)
+      const guideContentIDs = [...new Set((guideRows ?? []).map((r: any) => r.contentID))]
+      if (guideContentIDs.length === 0) { setCategories([]); return }
 
       const { data, error: err } = await supabase
         .from('first_aid_content')
         .select('contentID, emergencyCategory')
         .eq('petType', pet)
+        .in('contentID', guideContentIDs)
       if (err) throw new Error(err.message)
 
-      const filtered = (data ?? []).filter((r: any) => validatedIDs.includes(r.contentID))
-      const cats = [...new Set(filtered.map((r: any) => r.emergencyCategory))].sort()
+      const cats = [...new Set((data ?? []).map((r: any) => r.emergencyCategory))].sort()
       setCategories(cats)
     } catch (e: any) {
       setError(e.message)
@@ -129,7 +146,7 @@ export default function GuidePage() {
       const { data: reviewed, error: revErr } = await supabase
         .from('content_review')
         .select('contentID, reviewedDate')
-        .eq('status', 'validated')
+        .eq('status', 'published')
         .order('reviewedDate', { ascending: false })
       if (revErr) throw new Error(revErr.message)
       const validatedIDs = (reviewed ?? []).map((r: any) => r.contentID)

@@ -507,6 +507,39 @@ export async function viewStaffContent(staffID: string): Promise<any[]> {
   }))
 }
 
+// Staff: edit guide steps on a validated content record, then send back for vet re-validation
+export async function editGuideAndResubmit(
+  reviewID: string,
+  stepEdits: Array<{ guideID: string; title: string; instruction: string; videoUrl?: string }>,
+): Promise<ContentReview> {
+  for (const step of stepEdits) {
+    await updateGuide(step.guideID, step.title, step.instruction, step.videoUrl)
+  }
+  const { data: original, error: fetchErr } = await supabase
+    .from('content_review')
+    .select('contentID, vetID')
+    .eq('reviewID', reviewID)
+    .single()
+  if (fetchErr) throw new Error(fetchErr.message)
+  const { data, error } = await supabase
+    .from('content_review')
+    .insert({ contentID: original.contentID, vetID: original.vetID, status: 'pending' })
+    .select()
+    .single()
+  if (error) throw new Error(error.message)
+  return data
+}
+
+// Staff: delete a full content bundle (guide/video/quiz + review + parent record)
+export async function deleteFullContent(contentID: string): Promise<void> {
+  await supabase.from('guide').delete().eq('contentID', contentID)
+  await supabase.from('educational_video').delete().eq('contentID', contentID)
+  await supabase.from('quiz').delete().eq('contentID', contentID)
+  await supabase.from('content_review').delete().eq('contentID', contentID)
+  const { error } = await supabase.from('first_aid_content').delete().eq('contentID', contentID)
+  if (error) throw new Error(error.message)
+}
+
 // Staff: resubmit a rejected content record for re-validation by inserting a new pending review
 // Takes the reviewID of the rejected review to find the contentID and vetID, then creates a new pending review
 export async function resubmitContent(

@@ -107,11 +107,11 @@ export default function StaffDashboardPage() {
         }));
       }
 
-      // Published (validated) content
+      // Published content
       const { data: published } = await supabase
         .from("content_review")
         .select("contentID")
-        .eq("status", "validated");
+        .eq("status", "published");
       if (published) {
         setStats(prev => ({ ...prev, publishedContent: published.length }));
       }

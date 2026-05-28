@@ -52,7 +52,7 @@ export default function VideoPage() {
     async function loadValidatedPetTypes() {
       try {
         const { data: reviewed, error: revErr } = await supabase
-          .from('content_review').select('contentID').eq('status', 'validated')
+          .from('content_review').select('contentID').eq('status', 'published')
         if (revErr) throw new Error(revErr.message)
         const validatedIDs = (reviewed ?? []).map((r: any) => r.contentID)
         if (validatedIDs.length === 0) { setPetTypes([]); return }
@@ -81,7 +81,7 @@ export default function VideoPage() {
     setError('')
     try {
       const { data: reviewed, error: revErr } = await supabase
-        .from('content_review').select('contentID').eq('status', 'validated')
+        .from('content_review').select('contentID').eq('status', 'published')
       if (revErr) throw new Error(revErr.message)
       const validatedIDs = (reviewed ?? []).map((r: any) => r.contentID)
       if (validatedIDs.length === 0) { setCats([]); return }
@@ -111,7 +111,7 @@ export default function VideoPage() {
       const { data: reviewed, error: revErr } = await supabase
         .from('content_review')
         .select('contentID')
-        .eq('status', 'validated')
+        .eq('status', 'published')
       if (revErr) throw new Error(revErr.message)
       const validatedIDs = (reviewed ?? []).map((r: any) => r.contentID)
       if (validatedIDs.length === 0) { setVideo(null); return }
