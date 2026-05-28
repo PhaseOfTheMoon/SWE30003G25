@@ -289,10 +289,7 @@ export default function QuizPage() {
         <h1 style={{ fontSize: "36px", fontWeight: "bold", marginBottom: "10px", color: "#111827" }}>
           Pet First Aid Quiz
         </h1>
-
-        <p style={{ marginBottom: "8px", color: "#6b7280", fontSize: "16px" }}>
-          Quiz ID: {quiz.quizID}
-        </p>
+        
 
         <p style={{ marginBottom: "30px", color: "#6b7280", fontSize: "16px" }}>
           Answer all {quiz.totalMark} questions to test your knowledge.
