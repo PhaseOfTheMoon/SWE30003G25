@@ -16,15 +16,14 @@ export default function Footer() {
           <ul style={{ listStyle: "none", padding: 0, fontSize: "13px" }}>
             <li style={{ marginBottom: "8px" }}><Link href="/" style={{ color: "#9ca3af", textDecoration: "none" }}>Home</Link></li>
             <li style={{ marginBottom: "8px" }}><Link href="/about" style={{ color: "#9ca3af", textDecoration: "none" }}>About Us</Link></li>
-            <li style={{ marginBottom: "8px" }}><Link href="/guide" style={{ color: "#9ca3af", textDecoration: "none" }}>First Aid Guide</Link></li>
+            <li style={{ marginBottom: "8px" }}><Link href="/content" style={{ color: "#9ca3af", textDecoration: "none" }}>First Aid Content</Link></li>
             <li style={{ marginBottom: "8px" }}><Link href="/contact" style={{ color: "#9ca3af", textDecoration: "none" }}>Contact Us</Link></li>
           </ul>
         </div>
         <div>
           <h4 style={{ color: "white", fontWeight: "600", marginBottom: "12px" }}>Services</h4>
           <ul style={{ listStyle: "none", padding: 0, fontSize: "13px" }}>
-            <li style={{ marginBottom: "8px" }}><Link href="/guide" style={{ color: "#9ca3af", textDecoration: "none" }}>First Aid Guide</Link></li>
-            <li style={{ marginBottom: "8px" }}><Link href="/video" style={{ color: "#9ca3af", textDecoration: "none" }}>Educational Videos</Link></li>
+            <li style={{ marginBottom: "8px" }}><Link href="/content" style={{ color: "#9ca3af", textDecoration: "none" }}>First Aid Content</Link></li>
             <li style={{ marginBottom: "8px" }}><Link href="/quiz" style={{ color: "#9ca3af", textDecoration: "none" }}>First Aid Quiz</Link></li>
             <li style={{ marginBottom: "8px" }}><Link href="/emergency" style={{ color: "#9ca3af", textDecoration: "none" }}>Emergency Contact</Link></li>
           </ul>
