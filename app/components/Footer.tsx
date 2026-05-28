@@ -44,9 +44,6 @@ export default function Footer() {
           <p style={{ fontSize: "13px", lineHeight: "1.6", marginBottom: "12px" }}>
             Cannot find what you need? Send us an enquiry and our team will help you.
           </p>
-          <Link href="/enquiry" style={{ padding: "8px 16px", backgroundColor: "#dc2626", color: "white", borderRadius: "4px", textDecoration: "none", fontSize: "13px", fontWeight: "600" }}>
-            Submit Enquiry
-          </Link>
         </div>
       </div>
       <div style={{ textAlign: "center", fontSize: "12px", color: "#6b7280", marginTop: "32px" }}>

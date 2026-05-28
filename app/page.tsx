@@ -42,12 +42,6 @@ const services = [
     desc: "Send a question to our staff and get help from a qualified veterinarian.",
     href: "/enquiry",
   },
-  {
-    icon: "🐾",
-    title: "Pet Categories",
-    desc: "Get first aid content for dogs, cats, and small pets like rabbits and hamsters.",
-    href: "/guide",
-  },
 ];
 
 const reasons = [
@@ -117,7 +111,7 @@ export default function HomePage() {
               <Link href="/register" style={{ padding: "12px 24px", backgroundColor: "#dc2626", color: "white", borderRadius: "4px", textDecoration: "none", fontWeight: "bold" }}>
                 Get Started
               </Link>
-              <Link href="/guide" style={{ padding: "12px 24px", border: "2px solid white", color: "white", borderRadius: "4px", textDecoration: "none", fontWeight: "bold" }}>
+              <Link href="/" style={{ padding: "12px 24px", border: "2px solid white", color: "white", borderRadius: "4px", textDecoration: "none", fontWeight: "bold" }}>
                 Learn More
               </Link>
             </div>

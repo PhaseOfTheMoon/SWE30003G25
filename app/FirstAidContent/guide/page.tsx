@@ -44,15 +44,15 @@ export default function GuidePage() {
   const [guides, setGuides] = useState<Guide[]>([])
   const [video, setVideo] = useState<EducationalVideo | null>(null)
 
-  const [selectedPet, setSelectedPet]           = useState('')
+  const [selectedPet, setSelectedPet] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
-  const [contentID, setContentID]               = useState('')
+  const [contentID, setContentID] = useState('')
 
-  const [loadingPets, setLoadingPets]   = useState(true)
-  const [loadingCats, setLoadingCats]   = useState(false)
+  const [loadingPets, setLoadingPets] = useState(true)
+  const [loadingCats, setLoadingCats] = useState(false)
   const [loadingGuide, setLoadingGuide] = useState(false)
-  const [activeStep, setActiveStep]     = useState(0)
-  const [error, setError]               = useState('')
+  const [activeStep, setActiveStep] = useState(0)
+  const [error, setError] = useState('')
 
   // Step 1: load pet types that have at least one validated content record
   useEffect(() => {
