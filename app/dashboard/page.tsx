@@ -4,8 +4,6 @@ import Link from "next/link";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
-// Simple pet owner dashboard page
-// This can be updated later with more features
 export default function DashboardPage() {
   return (
     <main>
@@ -19,7 +17,7 @@ export default function DashboardPage() {
 
           {/* Quick links to main features */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
-            <Link href="/guide" style={{ textDecoration: "none" }}>
+            <Link href="/FirstAidContent/guide" style={{ textDecoration: "none" }}>
               <div style={{ backgroundColor: "white", borderRadius: "8px", padding: "24px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)", textAlign: "center" }}>
                 <div style={{ fontSize: "36px", marginBottom: "12px" }}>📖</div>
                 <h3 style={{ fontWeight: "bold", marginBottom: "6px" }}>First-Aid Guide</h3>
@@ -27,7 +25,7 @@ export default function DashboardPage() {
               </div>
             </Link>
 
-            <Link href="/video" style={{ textDecoration: "none" }}>
+            <Link href="/FirstAidContent/video" style={{ textDecoration: "none" }}>
               <div style={{ backgroundColor: "white", borderRadius: "8px", padding: "24px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)", textAlign: "center" }}>
                 <div style={{ fontSize: "36px", marginBottom: "12px" }}>🎬</div>
                 <h3 style={{ fontWeight: "bold", marginBottom: "6px" }}>Videos</h3>
@@ -35,27 +33,11 @@ export default function DashboardPage() {
               </div>
             </Link>
 
-            <Link href="/quiz" style={{ textDecoration: "none" }}>
+            <Link href="/FirstAidContent/quiz" style={{ textDecoration: "none" }}>
               <div style={{ backgroundColor: "white", borderRadius: "8px", padding: "24px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)", textAlign: "center" }}>
                 <div style={{ fontSize: "36px", marginBottom: "12px" }}>📝</div>
                 <h3 style={{ fontWeight: "bold", marginBottom: "6px" }}>Quiz</h3>
                 <p style={{ color: "#6b7280", fontSize: "13px" }}>Test your first aid knowledge</p>
-              </div>
-            </Link>
-
-            <Link href="/emergency" style={{ textDecoration: "none" }}>
-              <div style={{ backgroundColor: "white", borderRadius: "8px", padding: "24px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)", textAlign: "center" }}>
-                <div style={{ fontSize: "36px", marginBottom: "12px" }}>🚨</div>
-                <h3 style={{ fontWeight: "bold", marginBottom: "6px" }}>Emergency</h3>
-                <p style={{ color: "#6b7280", fontSize: "13px" }}>Find emergency contacts</p>
-              </div>
-            </Link>
-
-            <Link href="/enquiry" style={{ textDecoration: "none" }}>
-              <div style={{ backgroundColor: "white", borderRadius: "8px", padding: "24px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)", textAlign: "center" }}>
-                <div style={{ fontSize: "36px", marginBottom: "12px" }}>💬</div>
-                <h3 style={{ fontWeight: "bold", marginBottom: "6px" }}>Submit Enquiry</h3>
-                <p style={{ color: "#6b7280", fontSize: "13px" }}>Send a question to our team</p>
               </div>
             </Link>
           </div>

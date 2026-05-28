@@ -52,7 +52,7 @@ export default function LoginPage() {
     } else if (profile?.role === "veterinarian") {
       router.push("/vet");
     } else {
-      router.push("/dashboard");
+      router.push("/");
     }
   }
 
