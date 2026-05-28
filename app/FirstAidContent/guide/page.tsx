@@ -19,10 +19,20 @@ type Step = 'pet' | 'category' | 'guide'
 function toEmbedUrl(url: string): string | null {
   try {
     const u = new URL(url)
-    if (u.hostname === 'youtu.be') return `https://www.youtube.com/embed/${u.pathname.slice(1)}`
+    if (u.hostname === 'youtu.be') {
+      const id = u.pathname.slice(1).split('/')[0]
+      return id ? `https://www.youtube.com/embed/${id}` : null
+    }
     if (u.hostname.includes('youtube.com')) {
-      if (u.pathname === '/watch') return `https://www.youtube.com/embed/${u.searchParams.get('v')}`
+      if (u.pathname === '/watch') {
+        const v = u.searchParams.get('v')
+        return v ? `https://www.youtube.com/embed/${v}` : null
+      }
       if (u.pathname.startsWith('/embed/')) return url
+      if (u.pathname.startsWith('/shorts/')) {
+        const id = u.pathname.split('/shorts/')[1]?.split('/')[0]
+        return id ? `https://www.youtube.com/embed/${id}` : null
+      }
     }
   } catch {}
   return null
@@ -365,14 +375,27 @@ export default function GuidePage() {
                               <strong className={styles.stepTitle}>{g.title}</strong>
                               <span className={styles.stepText}>{g.instruction}</span>
                               {g.videoUrl && (
-                                <a
-                                  href={g.videoUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className={styles.stepLink}
-                                >
-                                  Open step demo
-                                </a>
+                                toEmbedUrl(g.videoUrl) ? (
+                                  <div className={styles.stepVideoEmbed}>
+                                    <iframe
+                                      className={styles.videoIframe}
+                                      src={toEmbedUrl(g.videoUrl)!}
+                                      title={`Step ${g.stepNumber} demo`}
+                                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                      allowFullScreen
+                                    />
+                                  </div>
+                                ) : (
+                                  <a
+                                    href={g.videoUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className={styles.videoFallback}
+                                    style={{ marginTop: '8px' }}
+                                  >
+                                    Open step demo ↗
+                                  </a>
+                                )
                               )}
                             </span>
                           </li>
