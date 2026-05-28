@@ -124,7 +124,7 @@ export default function StaffEnquiriesPage() {
   }
 
   return (
-    <DashboardLayout role="Staff" name="Staff" navItems={STAFF_NAV}>
+    <DashboardLayout role="Staff" navItems={STAFF_NAV}>
       <div style={{ maxWidth: '900px' }}>
 
         {/* Header */}

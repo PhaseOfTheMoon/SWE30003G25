@@ -168,7 +168,7 @@ export default function StaffPendingReviewPage() {
   ]
 
   return (
-    <DashboardLayout role="Staff" name="Alex Wong" navItems={STAFF_NAV}>
+    <DashboardLayout role="Staff" navItems={STAFF_NAV}>
 
       {/* Header */}
       <div style={{ marginBottom: '28px' }}>

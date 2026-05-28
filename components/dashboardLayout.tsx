@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { ReactNode, useEffect, useState } from "react";
+import supabase from "@/lib/supabase";
 
 type NavItem = {
   label: string;
@@ -12,13 +13,35 @@ type NavItem = {
 
 type Props = {
   role: "Staff" | "Veterinarian";
-  name: string;
   navItems: NavItem[];
   children: ReactNode;
 };
 
-export default function DashboardLayout({ role, name, navItems, children }: Props) {
+export default function DashboardLayout({ role, navItems, children }: Props) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [name, setName] = useState("");
+
+  useEffect(() => {
+    async function fetchName() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("name")
+        .eq("id", user.id)
+        .single();
+      if (profile?.name) setName(profile.name);
+    }
+    fetchName();
+  }, []);
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    router.push("/");
+  }
+
+  const avatarLetter = name ? name.charAt(0).toUpperCase() : "";
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", backgroundColor: "#f9fafb", fontFamily: "sans-serif" }}>
@@ -32,16 +55,16 @@ export default function DashboardLayout({ role, name, navItems, children }: Prop
           <div style={{ fontSize: "13px", color: "#6b7280", backgroundColor: "#f3f4f6", padding: "4px 12px", borderRadius: "999px" }}>
             {role} Portal
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <div style={{ textAlign: "right" }}>
-              <p style={{ fontSize: "14px", fontWeight: "600", color: "#111827", margin: 0 }}>{name}</p>
-              <p style={{ fontSize: "12px", color: "#9ca3af", margin: 0 }}>{role}</p>
-            </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <div style={{ width: "36px", height: "36px", borderRadius: "50%", backgroundColor: "#dc2626", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", fontSize: "14px" }}>
-              {name.charAt(0)}
+              {avatarLetter}
             </div>
-            <button style={{ fontSize: "13px", color: "#6b7280", background: "none", border: "none", cursor: "pointer" }}>
-              Sign out
+            <span style={{ fontSize: "14px", color: "#374151" }}>{name}</span>
+            <button
+              onClick={handleLogout}
+              style={{ padding: "8px 16px", border: "1px solid #dc2626", color: "#dc2626", borderRadius: "4px", fontSize: "14px", cursor: "pointer", backgroundColor: "white" }}
+            >
+              Logout
             </button>
           </div>
         </div>

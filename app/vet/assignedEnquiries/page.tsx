@@ -63,7 +63,7 @@ export default function AssignedEnquiriesPage() {
   }
 
   return (
-    <DashboardLayout role="Veterinarian" name="Veterinarian" navItems={VET_NAV}>
+    <DashboardLayout role="Veterinarian" navItems={VET_NAV}>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Assigned Enquiries</h1>
 
       <div className="flex gap-6">

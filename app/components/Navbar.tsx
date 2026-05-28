@@ -8,7 +8,7 @@ import supabase from "../../lib/supabase";
 export default function Navbar() {
   const router = useRouter();
 
-  const [user, setUser] = useState<{ id: string; name: string; email: string } | null>(null);
+  const [user, setUser] = useState<{ id: string; name: string; email: string; role: string } | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
@@ -18,11 +18,11 @@ export default function Navbar() {
         const userId = sessionData.session.user.id;
         const { data: profile } = await supabase
           .from("profiles")
-          .select("name, email")
+          .select("name, email, role")
           .eq("id", userId)
           .single();
         if (profile) {
-          setUser({ id: userId, name: profile.name, email: profile.email });
+          setUser({ id: userId, name: profile.name, email: profile.email, role: profile.role ?? "" });
           fetchUnread(userId);
         }
       }
@@ -34,11 +34,11 @@ export default function Navbar() {
       if (session) {
         const { data: profile } = await supabase
           .from("profiles")
-          .select("name, email")
+          .select("name, email, role")
           .eq("id", session.user.id)
           .single();
         if (profile) {
-          setUser({ id: session.user.id, name: profile.name, email: profile.email });
+          setUser({ id: session.user.id, name: profile.name, email: profile.email, role: profile.role ?? "" });
           fetchUnread(session.user.id);
         }
       } else {
@@ -82,13 +82,19 @@ export default function Navbar() {
           🐾 PetFirstAid
         </div>
 
-        <div style={{ display: "flex", gap: "24px", fontSize: "15px" }}>
-          <Link href="/" style={{ color: "#374151", textDecoration: "none" }}>Home</Link>
-          <Link href="/about" style={{ color: "#374151", textDecoration: "none" }}>About</Link>
-          <Link href="/guide" style={{ color: "#374151", textDecoration: "none" }}>First-Aid Guide</Link>
-          <Link href="/emergency" style={{ color: "#374151", textDecoration: "none" }}>Emergency</Link>
-          <Link href="/contact" style={{ color: "#374151", textDecoration: "none" }}>Contact</Link>
-        </div>
+        {user?.role === "staff" || user?.role === "veterinarian" ? (
+          <div style={{ padding: "6px 18px", border: "1px solid #d1d5db", borderRadius: "999px", fontSize: "14px", color: "#374151", backgroundColor: "#f9fafb" }}>
+            {user.role === "staff" ? "Staff Portal" : "Vet Portal"}
+          </div>
+        ) : (
+          <div style={{ display: "flex", gap: "24px", fontSize: "15px" }}>
+            <Link href="/" style={{ color: "#374151", textDecoration: "none" }}>Home</Link>
+            <Link href="/about" style={{ color: "#374151", textDecoration: "none" }}>About</Link>
+            <Link href="/guide" style={{ color: "#374151", textDecoration: "none" }}>First-Aid Guide</Link>
+            <Link href="/emergency" style={{ color: "#374151", textDecoration: "none" }}>Emergency</Link>
+            <Link href="/contact" style={{ color: "#374151", textDecoration: "none" }}>Contact</Link>
+          </div>
+        )}
 
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           {user ? (

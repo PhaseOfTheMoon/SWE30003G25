@@ -246,7 +246,7 @@ export default function StaffContentPage() {
   }
 
   return (
-    <DashboardLayout role="Staff" name="Alex Wong" navItems={STAFF_NAV}>
+    <DashboardLayout role="Staff" navItems={STAFF_NAV}>
       <div style={{ maxWidth: '720px', margin: '0 auto' }}>
 
         <div style={{ marginBottom: '28px' }}>

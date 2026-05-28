@@ -126,7 +126,7 @@ export default function VetDashboardPage() {
   };
 
   return (
-    <DashboardLayout role="Veterinarian" name={vetName} navItems={VET_NAV}>
+    <DashboardLayout role="Veterinarian" navItems={VET_NAV}>
 
       {/* Page header */}
       <div style={{ marginBottom: "28px" }}>

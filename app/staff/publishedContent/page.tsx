@@ -107,7 +107,7 @@ export default function PublishedContentPage() {
   }
 
   return (
-    <DashboardLayout role="Staff" name="Alex Wong" navItems={STAFF_NAV}>
+    <DashboardLayout role="Staff" navItems={STAFF_NAV}>
       <div style={{ marginBottom: '28px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
           <span style={{ fontSize: '22px' }}>📂</span>
