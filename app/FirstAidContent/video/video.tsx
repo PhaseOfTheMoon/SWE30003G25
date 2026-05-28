@@ -85,7 +85,7 @@ export default function VideoPage() {
       const { data: reviewed, error: revErr } = await supabase
         .from('content_review')
         .select('contentID')
-        .eq('status', 'published')
+        .eq('status', 'validated')
       if (revErr) throw new Error(revErr.message)
       const validatedIDs = (reviewed ?? []).map((r: any) => r.contentID)
       if (validatedIDs.length === 0) { setVideo(null); return }
