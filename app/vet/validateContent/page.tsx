@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import DashboardLayout from '@/components/dashboardLayout'
 import {
@@ -13,6 +13,22 @@ import supabase from '@/lib/supabase'
 import { VET_NAV } from '@/app/components/sidebar'
 
 export default function ValidateContentPage() {
+  return (
+    <Suspense fallback={<ValidateContentFallback />}>
+      <ValidateContentView />
+    </Suspense>
+  )
+}
+
+function ValidateContentFallback() {
+  return (
+    <DashboardLayout role="Veterinarian" name="Veterinarian" navItems={VET_NAV}>
+      <p className="text-gray-500">Loading content validation...</p>
+    </DashboardLayout>
+  )
+}
+
+function ValidateContentView() {
   const searchParams = useSearchParams()
   const initialTab = (searchParams.get('status') ?? 'pending') as 'pending' | 'validated' | 'rejected'
 

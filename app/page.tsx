@@ -16,13 +16,8 @@ const heroSlides = [
 const services = [
   {
     icon: "📖",
-    title: "First-Aid Guide",
-    desc: "Step by step instructions for common pet emergencies like choking, bleeding, and seizures.",
-  },
-  {
-    icon: "🎬",
-    title: "Educational Videos",
-    desc: "Short videos that teach you how to handle pet emergencies in the right way.",
+    title: "First Aid Content",
+    desc: "Choose a pet type, open an emergency guide, and watch the attached educational video when available.",
   },
   {
     icon: "📝",
@@ -117,8 +112,8 @@ export default function HomePage() {
               <Link href="/register" style={{ padding: "12px 24px", backgroundColor: "#dc2626", color: "white", borderRadius: "4px", textDecoration: "none", fontWeight: "bold" }}>
                 Get Started
               </Link>
-              <Link href="/guide" style={{ padding: "12px 24px", border: "2px solid white", color: "white", borderRadius: "4px", textDecoration: "none", fontWeight: "bold" }}>
-                Learn More
+              <Link href="/content" style={{ padding: "12px 24px", border: "2px solid white", color: "white", borderRadius: "4px", textDecoration: "none", fontWeight: "bold" }}>
+                First Aid Content
               </Link>
             </div>
           </div>

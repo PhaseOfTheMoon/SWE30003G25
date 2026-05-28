@@ -49,6 +49,22 @@ export type ContentReview = {
   reviewedDate: string | null
 }
 
+export type FirstAidGuideContent = FirstAidContent & {
+  guide: Guide[]
+  content_review?: ContentReview[]
+}
+
+export type FirstAidVideoContent = FirstAidContent & {
+  educational_video: EducationalVideo[]
+  content_review?: ContentReview[]
+}
+
+export type FirstAidContentBundle = FirstAidContent & {
+  guide: Guide[]
+  educational_video: EducationalVideo[]
+  content_review?: Pick<ContentReview, 'status'>[]
+}
+
 // staff create a first-aid content with basic info (pet type + emergency category). This generates a contentID which is used as the parent key for all related guides, videos, quizzes, and reviews. 
 // The content starts with no guide steps until staff add them in subsequent calls.
 export async function createFirstAidContent(payload: {
@@ -163,6 +179,63 @@ export async function viewContentReview(contentID: string): Promise<ContentRevie
 
   if (error) return null
   return data
+}
+
+// Guest/PetOwner: view validated step-by-step guides.
+export async function viewPublishedGuides(): Promise<FirstAidGuideContent[]> {
+  const { data, error } = await supabase
+    .from('first_aid_content')
+    .select('*, guide(*), content_review!inner(status)')
+    .eq('content_review.status', 'validated')
+    .order('lastUpdateDate', { ascending: false })
+
+  if (error) throw new Error(error.message)
+
+  return (data ?? [])
+    .map((row) => ({
+      ...row,
+      guide: [...(row.guide ?? [])].sort((a, b) => a.stepNumber - b.stepNumber),
+    }))
+    .filter((row) => row.guide.length > 0)
+}
+
+// Guest/PetOwner: view validated educational videos.
+export async function viewPublishedVideos(): Promise<FirstAidVideoContent[]> {
+  const { data, error } = await supabase
+    .from('first_aid_content')
+    .select('*, educational_video(*), content_review!inner(status)')
+    .eq('content_review.status', 'validated')
+    .order('lastUpdateDate', { ascending: false })
+
+  if (error) throw new Error(error.message)
+
+  return (data ?? [])
+    .map((row) => ({
+      ...row,
+      educational_video: row.educational_video ?? [],
+    }))
+    .filter((row) => row.educational_video.length > 0)
+}
+
+// Guest/PetOwner: view the full FirstAidContent aggregate.
+// The UI uses this to let users choose a pet type, then open emergency guide sections.
+export async function viewPublishedFirstAidContent(): Promise<FirstAidContentBundle[]> {
+  const { data, error } = await supabase
+    .from('first_aid_content')
+    .select('*, guide(*), educational_video(*), content_review!inner(status)')
+    .eq('content_review.status', 'validated')
+    .order('petType', { ascending: true })
+    .order('emergencyCategory', { ascending: true })
+
+  if (error) throw new Error(error.message)
+
+  return (data ?? [])
+    .map((row) => ({
+      ...row,
+      guide: [...(row.guide ?? [])].sort((a, b) => a.stepNumber - b.stepNumber),
+      educational_video: row.educational_video ?? [],
+    }))
+    .filter((row) => row.guide.length > 0 || row.educational_video.length > 0)
 }
 
 // staff update guide content and reset review to pending (if rejected) would be handled in a single function since they often happen together.
