@@ -7,6 +7,7 @@ import {
   resubmitContent,
   publishContent,
   editGuideAndResubmit,
+  updateGuide,
   type ContentReview,
 } from '@/lib/content'
 import supabase from '@/lib/supabase'
@@ -92,7 +93,13 @@ export default function StaffPendingReviewPage() {
     if (!draft?.title.trim() || !draft?.instruction.trim()) return
     setSubmitting(true)
     try {
-      const updated = await resubmitContent(review.reviewID, draft)
+      // Save the edited guide step first
+      const guides = (review as any).guide ?? []
+      if (guides[0]) {
+        await updateGuide(guides[0].guideID, draft.title, draft.instruction, guides[0].videoUrl ?? undefined)
+      }
+      // Then resubmit for vet re-validation
+      const updated = await resubmitContent(review.reviewID)
       setReviews(prev => prev.map(r => r.reviewID === updated.reviewID ? updated : r))
       setEditing(null)
       setFeedback(prev => ({ ...prev, [review.reviewID]: { type: 'ok', msg: 'Resubmitted for vet review.' } }))

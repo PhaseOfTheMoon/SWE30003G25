@@ -64,7 +64,7 @@ export default function GuidePage() {
   const [activeStep, setActiveStep] = useState(0)
   const [error, setError] = useState('')
 
-  // ── Permission state 
+  // Permission state 
   const [isPetOwner, setIsPetOwner] = useState(false)
   const [authLoading, setAuthLoading] = useState(true)
 

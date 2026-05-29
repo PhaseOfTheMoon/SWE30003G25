@@ -73,7 +73,13 @@ export default function PublishedContentPage() {
         await updateEducationalVideo(draft.video.videoID, draft.video.title, draft.video.videoUrl, draft.video.description)
       }
       if (draft.quiz) {
-        await updateQuiz(draft.quiz.quizID, draft.quiz.title, draft.quiz.questions)
+        await updateQuiz(
+            draft.quiz.quizID,
+            draft.quiz.title,
+            draft.quiz.questions,
+            item.first_aid_content?.petType ?? '',
+            item.first_aid_content?.emergencyCategory ?? '',
+        )
       }
       await load()
       setMode(prev => ({ ...prev, [item.reviewID]: 'view' }))
@@ -302,7 +308,7 @@ export default function PublishedContentPage() {
                                       onChange={e => setDrafts(prev => ({ ...prev, [item.reviewID]: { ...prev[item.reviewID], quiz: { ...prev[item.reviewID].quiz, questions: prev[item.reviewID].quiz.questions.map((qu: QuizQuestion, i: number) => i === qi ? { ...qu, question: e.target.value } : qu) } } }))} />
                                     {q.options.map((opt: string, oi: number) => (
                                       <div key={oi} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                                        <input type="radio" name={`q-${item.reviewID}-${qi}`} checked={q.answer === oi}
+                                        <input type="radio" name={`q-${item.reviewID}-${qi}`} checked={q.answer === String(oi)}
                                           onChange={() => setDrafts(prev => ({ ...prev, [item.reviewID]: { ...prev[item.reviewID], quiz: { ...prev[item.reviewID].quiz, questions: prev[item.reviewID].quiz.questions.map((qu: QuizQuestion, i: number) => i === qi ? { ...qu, answer: oi } : qu) } } }))} />
                                         <input type="text" value={opt} placeholder={`Option ${oi + 1}`} style={{ ...inputStyle, flex: 1 }}
                                           onChange={e => setDrafts(prev => ({ ...prev, [item.reviewID]: { ...prev[item.reviewID], quiz: { ...prev[item.reviewID].quiz, questions: prev[item.reviewID].quiz.questions.map((qu: QuizQuestion, i: number) => i === qi ? { ...qu, options: qu.options.map((o, j) => j === oi ? e.target.value : o) } : qu) } } }))} />

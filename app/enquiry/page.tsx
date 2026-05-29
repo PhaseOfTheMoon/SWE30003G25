@@ -16,8 +16,8 @@ type Enquiry = {
 }
 
 const STATUS_STYLE: Record<string, { bg: string; color: string; label: string }> = {
-  pending:   { bg: '#fef3c7', color: '#92400e', label: '⏳ Pending' },
-  assigned:  { bg: '#dbeafe', color: '#1e40af', label: '👨‍⚕️ With Vet' },
+  pending: { bg: '#fef3c7', color: '#92400e', label: '⏳ Pending' },
+  assigned: { bg: '#dbeafe', color: '#1e40af', label: '👨‍⚕️ With Vet' },
   responded: { bg: '#dcfce7', color: '#166534', label: '✓ Responded' },
 }
 
@@ -157,9 +157,12 @@ export default function EnquiryPage() {
 
   function timeAgo(iso: string) {
     const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
-    if (s < 60)    return 'just now'
-    if (s < 3600)  return `${Math.floor(s / 60)}m ago`
-    if (s < 86400) return `${Math.floor(s / 3600)}h ago`
+    if (s < 60) 
+      return 'just now'
+    if (s < 3600) 
+      return `${Math.floor(s / 60)}m ago`
+    if (s < 86400) 
+      return `${Math.floor(s / 3600)}h ago`
     return `${Math.floor(s / 86400)}d ago`
   }
 

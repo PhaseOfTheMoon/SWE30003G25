@@ -9,7 +9,7 @@ export type Enquiry = {
   response: string | null
   petOwnerID: string
   vetID: string | null
-  created_at:  string
+  created_at: string
 }
 
 // pet owner submits an enquiry about a pet emergency
@@ -47,7 +47,7 @@ export async function viewEnquiry(): Promise<Enquiry[]> {
 // Staff assigns an enquiry to a vet, changing status to 'assigned'
 export async function assignEnquiryToVet(
   enquiryID: string,
-  vetID:      string
+  vetID: string
 ): Promise<Enquiry> {
   const { data, error } = await supabase
     .from('enquiry')

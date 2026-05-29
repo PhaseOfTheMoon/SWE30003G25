@@ -12,9 +12,9 @@ import supabase from '@/lib/supabase'
 import { STAFF_NAV } from '@/app/components/sidebar'
 
 const STATUS_BADGE: Record<string, string> = {
-  pending: 'bg-amber-50  text-amber-800  border border-amber-200',
-  assigned: 'bg-blue-50   text-blue-800   border border-blue-200',
-  responded: 'bg-green-50  text-green-800  border border-green-200',
+  pending: 'bg-amber-50 text-amber-800 border border-amber-200',
+  assigned: 'bg-blue-50 text-blue-800 border border-blue-200',
+  responded: 'bg-green-50 text-green-800 border border-green-200',
 }
 
 export default function StaffEnquiriesPage() {
@@ -116,9 +116,12 @@ export default function StaffEnquiriesPage() {
   // helper function to display how long ago the enquiry was created in a human-readable format. This is just for better UX in the enquiry list.
   function timeAgo(iso: string) {
     const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
-    if (s < 60) return 'just now'
-    if (s < 3600) return `${Math.floor(s / 60)} min ago`
-    if (s < 86400) return `${Math.floor(s / 3600)} hr ago`
+    if (s < 60) 
+      return 'just now'
+    if (s < 3600) 
+      return `${Math.floor(s / 60)} min ago`
+    if (s < 86400) 
+      return `${Math.floor(s / 3600)} hr ago`
     return `${Math.floor(s / 86400)} day ago`
   }
 

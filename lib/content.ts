@@ -3,11 +3,11 @@ import supabase from '@/lib/supabase'
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type FirstAidContent = {
-  contentID:         string
-  petType:           string
+  contentID: string
+  petType: string
   emergencyCategory: string
-  lastUpdateDate:    string
-  staffID:           string
+  lastUpdateDate: string
+  staffID: string
 }
 
 // Guide — maps to the Guide table in the UML (guideID, title, stepNumber, instruction, videoUrl)
@@ -33,25 +33,25 @@ export type EducationalVideo = {
 // QuizQuestion — stored in quiz_question table
 export type QuizQuestion = {
   question: string
-  options:  string[]
-  answer:   string       // text of the correct option
+  options: string[]
+  answer: string       // text of the correct option
 }
 
 // Quiz — maps to Quiz table in the UML (quizID, questionBank, question, totalMark, score)
 export type Quiz = {
-  quizID:    string
+  quizID: string
   contentID: string
-  title:     string
+  title: string
   questions: QuizQuestion[]
 }
 
 // ContentReview — maps to ContentReview in the UML (reviewID, contentID, VetID, status, comment, reviewedDate)
 export type ContentReview = {
-  reviewID:     string
-  contentID:    string
-  vetID:        string
-  status:       'pending' | 'validated' | 'rejected' | 'published'
-  comment?:     string | null
+  reviewID: string
+  contentID: string
+  vetID: string
+  status: 'pending' | 'validated' | 'rejected' | 'published'
+  comment?: string | null
   reviewedDate?:string | null
 }
 
@@ -88,15 +88,15 @@ export const CATEGORY_EMOJI: Record<string, string> = {
 
 // Staff: create a first-aid content record (parent record for guide/video/quiz)
 export async function createFirstAidContent(payload: {
-  staffID:           string
-  petType:           string
+  staffID: string
+  petType: string
   emergencyCategory: string
 }): Promise<FirstAidContent> {
   const { data, error } = await supabase
     .from('first_aid_content')
     .insert({
-      staffID:           payload.staffID,
-      petType:           payload.petType,
+      staffID: payload.staffID,
+      petType: payload.petType,
       emergencyCategory: payload.emergencyCategory,
       lastUpdateDate:    new Date().toISOString(),
     })
@@ -179,10 +179,10 @@ export async function createGuide(payload: {
 
 // Staff: update a guide step
 export async function updateGuide(
-  guideID:     string,
-  title:       string,
+  guideID: string,
+  title: string,
   instruction: string,
-  videoUrl?:   string,
+  videoUrl?: string,
 ): Promise<Guide> {
   const { data, error } = await supabase
     .from('guide')
@@ -519,8 +519,8 @@ export async function viewStaffContent(staffID: string): Promise<any[]> {
       contentID: row.contentID,
       // Content fields
       first_aid_content: row,
-      guide:             row.guide             ?? [],
-      quiz:              row.quiz              ?? [],
+      guide: row.guide ?? [],
+      quiz: row.quiz ?? [],
       educational_video: row.educational_video ?? [],
     }
   })
