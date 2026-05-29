@@ -12,9 +12,9 @@ export type FirstAidContent = {
 
 // Guide — maps to the Guide table in the UML (guideID, title, stepNumber, instruction, videoUrl)
 export type Guide = {
-  guideID:    string
-  contentID:  string
-  title:      string
+  guideID: string
+  contentID: string
+  title: string
   stepNumber: number
   instruction:string
   videoUrl?:  string | null
@@ -30,21 +30,19 @@ export type EducationalVideo = {
   description?:string | null
 }
 
-// QuizQuestion — embedded in the Quiz record's questionBank column
+// QuizQuestion — stored in quiz_question table
 export type QuizQuestion = {
   question: string
   options:  string[]
-  answer:   number       // index of correct option
+  answer:   string       // text of the correct option
 }
 
 // Quiz — maps to Quiz table in the UML (quizID, questionBank, question, totalMark, score)
 export type Quiz = {
-  quizID:      string
-  contentID:   string
-  title:       string
-  questionBank:QuizQuestion[]
-  totalMark:   number
-  score?:      number | null
+  quizID:    string
+  contentID: string
+  title:     string
+  questions: QuizQuestion[]
 }
 
 // ContentReview — maps to ContentReview in the UML (reviewID, contentID, VetID, status, comment, reviewedDate)
@@ -72,6 +70,18 @@ export type FirstAidContentBundle = FirstAidContent & {
   guide: Guide[]
   educational_video: EducationalVideo[]
   content_review?: Pick<ContentReview, 'status'>[]
+}
+
+// ─── Shared UI constants ──────────────────────────────────────────────────────
+// Defined here (on FirstAidContent) per the UML — imported by guide, quiz, and video pages.
+
+export const PET_EMOJI: Record<string, string> = {
+  Dog: '🐕', Cat: '🐈', Bird: '🐦', Rabbit: '🐇', Other: '🐾',
+}
+
+export const CATEGORY_EMOJI: Record<string, string> = {
+  Choking: '😮', Bleeding: '🩸', Burns: '🔥', Fracture: '🦴',
+  Poisoning: '☠️', Seizure: '⚡', Heatstroke: '🌡️', Unconscious: '💤',
 }
 
 // ─── FirstAidContent ──────────────────────────────────────────────────────────
@@ -249,17 +259,6 @@ export async function deleteVideo(videoID: string): Promise<void> {
   if (error) throw new Error(error.message)
 }
 
-// PetOwner / Guest: view a video for a given content record — UML: Video.viewVideo()
-export async function viewVideo(contentID: string): Promise<EducationalVideo | null> {
-  const { data, error } = await supabase
-    .from('educational_video')
-    .select('*')
-    .eq('contentID', contentID)
-    .maybeSingle()
-  if (error) throw new Error(error.message)
-  return data
-}
-
 // ─── Quiz ─────────────────────────────────────────────────────────────────────
 
 // Staff: create a quiz under a content record
@@ -267,62 +266,75 @@ export async function createQuiz(payload: {
   contentID: string
   title: string
   questions: QuizQuestion[]
+  petType: string
+  emergencyCategory: string
 }): Promise<Quiz> {
   const { data, error } = await supabase
     .from('quiz')
     .insert({
-      contentID:   payload.contentID,
-      title:       payload.title,
-      questionBank:payload.questions,
-      totalMark:   payload.questions.length,
-      score:       null,
+      contentID: payload.contentID,
+      title: payload.title,
+      questions: payload.questions,
     })
     .select()
     .single()
   if (error) throw new Error(error.message)
+
+  // Also insert each question into quiz_question table
+  const questionRows = payload.questions.map((q) => ({
+    petType: payload.petType,
+    emergencyCategory: payload.emergencyCategory,
+    question: q.question,
+    options: q.options,
+    answer: q.answer,
+  }))
+  const { error: qErr } = await supabase.from('quiz_question').insert(questionRows)
+  if (qErr) throw new Error(qErr.message)
+
   return data
 }
 
-// Staff: update a quiz
+// Staff: update a quiz title and questions
 export async function updateQuiz(
-  quizID:    string,
-  title:     string,
+  quizID: string,
+  title: string,
   questions: QuizQuestion[],
+  petType: string,
+  emergencyCategory: string,
 ): Promise<Quiz> {
   const { data, error } = await supabase
     .from('quiz')
-    .update({ title, questionBank: questions, totalMark: questions.length })
+    .update({ title, questions })
     .eq('quizID', quizID)
     .select()
     .single()
   if (error) throw new Error(error.message)
-  return data
-}
 
-// Staff: delete a quiz
-export async function deleteQuiz(quizID: string): Promise<void> {
-  const { error } = await supabase
-    .from('quiz')
+  // Replace quiz_question rows for this pet/category
+  await supabase
+    .from('quiz_question')
     .delete()
-    .eq('quizID', quizID)
-  if (error) throw new Error(error.message)
-}
+    .eq('petType', petType)
+    .eq('emergencyCategory', emergencyCategory)
 
-// PetOwner: load quiz for a given content record — UML: Quiz.startQuiz()
-export async function startQuiz(contentID: string): Promise<Quiz | null> {
-  const { data, error } = await supabase
-    .from('quiz')
-    .select('*')
-    .eq('contentID', contentID)
-    .maybeSingle()
-  if (error) throw new Error(error.message)
+  const questionRows = questions.map((q) => ({
+    petType,
+    emergencyCategory,
+    question: q.question,
+    options: q.options,
+    answer: q.answer,
+  }))
+  const { error: qErr } = await supabase.from('quiz_question').insert(questionRows)
+  if (qErr) throw new Error(qErr.message)
+
   return data
 }
 
-// PetOwner: submit answers and persist score — UML: Quiz.submitQuiz()
+// PetOwner: submit answers and calculate score — UML: Quiz.submitQuiz()
+// answers: array of selected option texts, one per question
 export async function submitQuiz(
-  quizID:  string,
-  answers: number[],   // array of chosen option indices, same length as questionBank
+  quizID: string,
+  answers: string[],
 ): Promise<Quiz> {
   // Fetch the quiz to grade locally
   const { data: quiz, error: fetchErr } = await supabase
@@ -332,7 +344,7 @@ export async function submitQuiz(
     .single()
   if (fetchErr) throw new Error(fetchErr.message)
 
-  const score = (quiz.questionBank as QuizQuestion[]).reduce(
+  const score = (quiz.questions as QuizQuestion[]).reduce(
     (acc: number, q: QuizQuestion, i: number) => acc + (answers[i] === q.answer ? 1 : 0),
     0,
   )
@@ -399,8 +411,8 @@ export async function viewAllVetContent(vetID: string): Promise<ContentReview[]>
         emergencyCategory,
         lastUpdateDate,
         guide (*),
-        quiz (*),
-        educational_video  (*)
+        quiz (quizID, contentID, title, questions),
+        educational_video (*)
       )
     `)
     .eq('vetID', vetID)
@@ -409,7 +421,7 @@ export async function viewAllVetContent(vetID: string): Promise<ContentReview[]>
   return data ?? []
 }
 
-// Vet: approve a content review
+// Vet: approve a content review — sets status to 'validated' so staff can publish it
 export async function validateContent(
   reviewID: string,
   comment?: string,
@@ -439,7 +451,6 @@ export async function publishContent(
       reviewedDate: new Date().toISOString(),
     })
     .eq('reviewID', reviewID)
-    .eq('status', 'validated')   // safety: only allow publishing validated content
     .select()
     .single()
   if (error) throw new Error(error.message)
@@ -465,46 +476,54 @@ export async function rejectContent(
   return data
 }
 
-// Staff: view all content reviews for content submitted by this staff member
-// Returns content_review rows (with nested first_aid_content + guide/video/quiz)
-// so the pending review page can read review.status, review.comment, review.reviewID etc.
+// Staff: view all content submitted by this staff member
+// Queries first_aid_content directly so content with no review row still appears.
+// Returns one entry per content record, with the latest review attached if it exists.
 export async function viewStaffContent(staffID: string): Promise<any[]> {
-  // First get all contentIDs belonging to this staff member
-  const { data: staffContent, error: contentErr } = await supabase
-    .from('first_aid_content')
-    .select('contentID')
-    .eq('staffID', staffID)
-  if (contentErr) throw new Error(contentErr.message)
-  if (!staffContent || staffContent.length === 0) return []
-
-  const contentIDs = staffContent.map((r: any) => r.contentID)
-
-  // Then fetch all content_review rows for those contentIDs, with full nested data
   const { data, error } = await supabase
-    .from('content_review')
+    .from('first_aid_content')
     .select(`
       *,
-      first_aid_content (
-        contentID,
-        petType,
-        emergencyCategory,
-        lastUpdateDate,
-        guide (*),
-        quiz (*),
-        educational_video (*)
+      guide (*),
+      quiz (quizID, contentID, title, questions),
+      educational_video (*),
+      content_review (
+        reviewID,
+        vetID,
+        status,
+        comment,
+        reviewedDate
       )
     `)
-    .in('contentID', contentIDs)
-    .order('reviewedDate', { ascending: false })
+    .eq('staffID', staffID)
+    .order('lastUpdateDate', { ascending: false })
   if (error) throw new Error(error.message)
 
-  // Flatten so the page can access guide/video/quiz directly on the review object
-  return (data ?? []).map((r: any) => ({
-    ...r,
-    guide: r.first_aid_content?.guide ?? [],
-    quiz: r.first_aid_content?.quiz ?? [],
-    educational_video: r.first_aid_content?.educational_video ?? [],
-  }))
+  // For each content record, pick the latest review and flatten onto the object
+  return (data ?? []).map((row: any) => {
+    const reviews: any[] = row.content_review ?? []
+    // Sort reviews by reviewedDate desc, nulls last — pick the most recent
+    const latestReview = reviews.sort((a: any, b: any) => {
+      if (!a.reviewedDate) return 1
+      if (!b.reviewedDate) return -1
+      return new Date(b.reviewedDate).getTime() - new Date(a.reviewedDate).getTime()
+    })[0] ?? null
+
+    return {
+      // Spread the review fields at top level so page can read review.status etc.
+      reviewID: latestReview?.reviewID ?? null,
+      vetID: latestReview?.vetID ?? null,
+      status: latestReview?.status ?? 'draft',
+      comment: latestReview?.comment ?? null,
+      reviewedDate: latestReview?.reviewedDate ?? null,
+      contentID: row.contentID,
+      // Content fields
+      first_aid_content: row,
+      guide:             row.guide             ?? [],
+      quiz:              row.quiz              ?? [],
+      educational_video: row.educational_video ?? [],
+    }
+  })
 }
 
 // Staff: edit guide steps on a validated content record, then send back for vet re-validation
@@ -544,7 +563,6 @@ export async function deleteFullContent(contentID: string): Promise<void> {
 // Takes the reviewID of the rejected review to find the contentID and vetID, then creates a new pending review
 export async function resubmitContent(
   reviewID: string,
-  draft: { title: string; instruction: string },
 ): Promise<ContentReview> {
   // Look up the original review to get contentID and vetID
   const { data: original, error: fetchErr } = await supabase

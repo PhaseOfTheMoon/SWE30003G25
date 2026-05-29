@@ -5,6 +5,10 @@ import Link from 'next/link'
 import Navbar from '@/app/components/Navbar'
 import Footer from '@/app/components/Footer'
 import {
+  getPetTypes,
+  getEmergencyCategories,
+  PET_EMOJI,
+  CATEGORY_EMOJI,
   type EducationalVideo,
 } from '@/lib/content'
 import supabase from '@/lib/supabase'
@@ -23,14 +27,6 @@ function toEmbedUrl(url: string): string {
   return url
 }
 
-const PET_EMOJI: Record<string, string> = {
-  Dog: '🐕', Cat: '🐈', Bird: '🐦', Rabbit: '🐇', Other: '🐾',
-}
-
-const CAT_EMOJI: Record<string, string> = {
-  Choking: '😮', Bleeding: '🩸', Burns: '🔥', Fracture: '🦴', Poisoning: '☠️', Seizure: '⚡',
-}
-
 type Step = 'pet' | 'category' | 'video'
 
 export default function VideoPage() {
@@ -47,20 +43,11 @@ export default function VideoPage() {
   const [loadingVideo, setLoadingVideo] = useState(false)
   const [error, setError] = useState('')
 
-  // Fetch available pet types — validated only
+  // Fetch available pet types — published only
   useEffect(() => {
-    async function loadValidatedPetTypes() {
+    async function loadPetTypes() {
       try {
-        const { data: reviewed, error: revErr } = await supabase
-          .from('content_review').select('contentID').eq('status', 'published')
-        if (revErr) throw new Error(revErr.message)
-        const validatedIDs = (reviewed ?? []).map((r: any) => r.contentID)
-        if (validatedIDs.length === 0) { setPetTypes([]); return }
-
-        const { data, error: err } = await supabase
-          .from('first_aid_content').select('petType').in('contentID', validatedIDs)
-        if (err) throw new Error(err.message)
-        const pets = [...new Set((data ?? []).map((r: any) => r.petType))].sort()
+        const pets = await getPetTypes()
         setPetTypes(pets)
       } catch (e: any) {
         setError(e.message)
@@ -68,10 +55,10 @@ export default function VideoPage() {
         setLoadingPets(false)
       }
     }
-    loadValidatedPetTypes()
+    loadPetTypes()
   }, [])
 
-  // Fetch categories for selected pet — validated only
+  // Fetch categories for selected pet — published only
   async function handleSelectPet(pet: string) {
     setSelectedPet(pet)
     setSelectedCategory('')
@@ -80,18 +67,7 @@ export default function VideoPage() {
     setLoadingCats(true)
     setError('')
     try {
-      const { data: reviewed, error: revErr } = await supabase
-        .from('content_review').select('contentID').eq('status', 'published')
-      if (revErr) throw new Error(revErr.message)
-      const validatedIDs = (reviewed ?? []).map((r: any) => r.contentID)
-      if (validatedIDs.length === 0) { setCats([]); return }
-
-      const { data, error: err } = await supabase
-        .from('first_aid_content').select('contentID, emergencyCategory').eq('petType', pet)
-      if (err) throw new Error(err.message)
-
-      const filtered = (data ?? []).filter((r: any) => validatedIDs.includes(r.contentID))
-      const cats = [...new Set(filtered.map((r: any) => r.emergencyCategory))].sort()
+      const cats = await getEmergencyCategories(pet)
       setCats(cats)
     } catch (e: any) {
       setError(e.message)
@@ -100,20 +76,20 @@ export default function VideoPage() {
     }
   }
 
-  // Fetch video for selected pet + category — validated content only
+  // Fetch video for selected pet + category — published content only
   async function handleSelectCategory(cat: string) {
     setSelectedCategory(cat)
     setStep('video')
     setLoadingVideo(true)
     setError('')
     try {
-      // Join through content_review to only surface validated content
+      // Join through content_review to only surface published content
       const { data: reviewed, error: revErr } = await supabase
         .from('content_review')
         .select('contentID')
         .eq('status', 'published')
       if (revErr) throw new Error(revErr.message)
-      const validatedIDs = (reviewed ?? []).map((r: any) => r.contentID)
+      const validatedIDs = [...new Set((reviewed ?? []).map((r: any) => r.contentID))]
       if (validatedIDs.length === 0) { setVideo(null); return }
 
       const { data, error: err } = await supabase
@@ -122,14 +98,15 @@ export default function VideoPage() {
         .eq('petType', selectedPet)
         .eq('emergencyCategory', cat)
         .in('contentID', validatedIDs)
-        .limit(1)
       if (err) throw new Error(err.message)
       if (!data || data.length === 0) { setVideo(null); return }
 
+      // Find the contentID that actually has a video
+      const matchIDs = data.map((r: any) => r.contentID)
       const { data: vidData, error: vidErr } = await supabase
         .from('educational_video')
         .select('*')
-        .eq('contentID', data[0].contentID)
+        .in('contentID', matchIDs)
         .maybeSingle()
       if (vidErr) throw new Error(vidErr.message)
       setVideo(vidData ?? null)
@@ -170,10 +147,17 @@ export default function VideoPage() {
                   <button
                     onClick={() => { setStep('category'); setSelectedCategory(''); setVideo(null) }}
                     style={{ background: 'none', border: 'none', color: selectedCategory ? '#3b82f6' : '#111827', cursor: selectedCategory ? 'pointer' : 'default', padding: 0, fontWeight: '500' }}
-                  >{selectedPet}</button>
+                  >
+                    {PET_EMOJI[selectedPet] ?? '🐾'} {selectedPet}
+                  </button>
                 </>
               )}
-              {selectedCategory && <><span>›</span><span style={{ color: '#111827', fontWeight: '500' }}>{selectedCategory}</span></>}
+              {selectedCategory && (
+                <>
+                  <span>›</span>
+                  <span style={{ color: '#111827', fontWeight: '500' }}>{CATEGORY_EMOJI[selectedCategory] ?? '🚨'} {selectedCategory}</span>
+                </>
+              )}
             </div>
           )}
 
@@ -221,7 +205,7 @@ export default function VideoPage() {
                     onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#3b82f6'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)' }}
                     onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#e5e7eb'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)' }}
                   >
-                    <p style={{ fontSize: '22px', marginBottom: '8px' }}>{CAT_EMOJI[cat] ?? '🚨'}</p>
+                    <p style={{ fontSize: '22px', marginBottom: '8px' }}>{CATEGORY_EMOJI[cat] ?? '🚨'}</p>
                     <p style={{ fontWeight: '600', fontSize: '14px', color: '#111827' }}>{cat}</p>
                   </button>
                 ))}
@@ -229,7 +213,7 @@ export default function VideoPage() {
             )
           )}
 
-          {/* Video viewer — viewVideo() */}
+          {/* Video viewer */}
           {step === 'video' && (
             loadingVideo ? (
               <p style={{ color: '#9ca3af', fontSize: '14px' }}>Loading video…</p>
@@ -281,10 +265,10 @@ export default function VideoPage() {
 
                   <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '12px', backgroundColor: '#eff6ff', color: '#1d4ed8', padding: '3px 10px', borderRadius: '999px', fontWeight: '500' }}>
-                      {selectedPet}
+                      {PET_EMOJI[selectedPet] ?? '🐾'} {selectedPet}
                     </span>
                     <span style={{ fontSize: '12px', backgroundColor: '#fef9c3', color: '#854d0e', padding: '3px 10px', borderRadius: '999px', fontWeight: '500' }}>
-                      {selectedCategory}
+                      {CATEGORY_EMOJI[selectedCategory] ?? '🚨'} {selectedCategory}
                     </span>
                   </div>
 

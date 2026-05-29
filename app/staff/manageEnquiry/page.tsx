@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import DashboardLayout from '@/components/dashboardLayout'
+import DashboardLayout from '@/app/components/dashboardLayout'
 import {
   viewEnquiry,
   assignEnquiryToVet,
@@ -48,7 +48,7 @@ export default function StaffEnquiriesPage() {
   async function loadEnquiries() {
     setLoading(true)
     try {
-      const data = await viewEnquiry()   
+      const data = await viewEnquiry()
       setEnquiries(data)
     } catch (e: any) {
       console.error(e.message)
@@ -59,7 +59,7 @@ export default function StaffEnquiriesPage() {
 
   // When an enquiry is selected from the list, we want to load the most up-to-date information for that enquiry in case it was updated by another staff member or vet. 
   // This ensures that we are always working with the latest data when responding or assigning.
-  function selectEnquiry(enq: Enquiry) { 
+  function selectEnquiry(enq: Enquiry) {
     setSelected(enq)
     setFeedback(null)
     setDirectReply('')
@@ -75,7 +75,7 @@ export default function StaffEnquiriesPage() {
     try {
       const updated = await assignEnquiryToVet(selected.enquiryID, selectedVet)  // Staff.assignEnquiryToVet()
       syncEnquiry(updated)
-      setSelectedVet(updated.vetID ?? '') 
+      setSelectedVet(updated.vetID ?? '')
       setFeedback({ msg: 'Enquiry assigned to veterinarian.', ok: true })
     } catch (e: any) {
       setFeedback({ msg: 'Error: ' + e.message, ok: false })
@@ -105,7 +105,7 @@ export default function StaffEnquiriesPage() {
   function syncEnquiry(updated: Enquiry) {
     setEnquiries(prev => prev.map(e => e.enquiryID === updated.enquiryID ? updated : e))
     setSelected(updated)
-    setSelectedVet(updated.vetID ?? '') 
+    setSelectedVet(updated.vetID ?? '')
   }
 
   // helper function to get vet name by ID for display in the enquiry list and detail view. We look up the vet's name from the vets state which we loaded on component mount.
@@ -117,7 +117,7 @@ export default function StaffEnquiriesPage() {
   function timeAgo(iso: string) {
     const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
     if (s < 60) return 'just now'
-    if (s < 3600)  return `${Math.floor(s / 60)} min ago`
+    if (s < 3600) return `${Math.floor(s / 60)} min ago`
     if (s < 86400) return `${Math.floor(s / 3600)} hr ago`
     return `${Math.floor(s / 86400)} day ago`
   }

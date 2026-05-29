@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import DashboardLayout from '@/components/dashboardLayout'
+import DashboardLayout from '@/app/components/dashboardLayout'
 import {
   viewAssignedEnquiry,
   respondAssignedEnquiry,

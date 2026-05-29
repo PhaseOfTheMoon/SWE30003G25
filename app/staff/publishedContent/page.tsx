@@ -1,6 +1,6 @@
 'use client'
 
-import DashboardLayout from '@/components/dashboardLayout'
+import DashboardLayout from '@/app/components/dashboardLayout'
 import { useEffect, useState } from 'react'
 import {
   viewStaffContent,
@@ -20,14 +20,14 @@ const INPUT = {
 type Mode = 'view' | 'edit'
 
 export default function PublishedContentPage() {
-  const [items, setItems]       = useState<any[]>([])
-  const [loading, setLoading]   = useState(true)
+  const [items, setItems] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState<string | null>(null)
-  const [mode, setMode]         = useState<Record<string, Mode>>({})
-  const [drafts, setDrafts]     = useState<Record<string, any>>({})
-  const [saving, setSaving]     = useState<string | null>(null)
+  const [mode, setMode] = useState<Record<string, Mode>>({})
+  const [drafts, setDrafts] = useState<Record<string, any>>({})
+  const [saving, setSaving] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
-  const [confirm, setConfirm]   = useState<string | null>(null)
+  const [confirm, setConfirm] = useState<string | null>(null)
   const [feedback, setFeedback] = useState<Record<string, { ok: boolean; msg: string }>>({})
 
   useEffect(() => { load() }, [])
@@ -45,15 +45,15 @@ export default function PublishedContentPage() {
   }
 
   function startEdit(item: any) {
-    const guides  = item.guide ?? []
-    const videos  = item.educational_video ?? []
+    const guides = item.guide ?? []
+    const videos = item.educational_video ?? []
     const quizzes = item.quiz ?? []
     setDrafts(prev => ({
       ...prev,
       [item.reviewID]: {
         steps: guides.map((g: any) => ({ guideID: g.guideID, title: g.title ?? '', instruction: g.instruction ?? '', videoUrl: g.videoUrl ?? '' })),
         video: videos[0] ? { videoID: videos[0].videoID, title: videos[0].title ?? '', videoUrl: videos[0].videoUrl ?? '', description: videos[0].description ?? '' } : null,
-        quiz:  quizzes[0] ? { quizID: quizzes[0].quizID, title: quizzes[0].title ?? '', questions: quizzes[0].questionBank ?? [] } : null,
+        quiz: quizzes[0] ? { quizID: quizzes[0].quizID, title: quizzes[0].title ?? '', questions: quizzes[0].questionBank ?? [] } : null,
       },
     }))
     setMode(prev => ({ ...prev, [item.reviewID]: 'edit' }))
@@ -129,17 +129,17 @@ export default function PublishedContentPage() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {items.map((item, idx) => {
-            const fc      = item.first_aid_content
-            const guides  = item.guide ?? []
-            const videos  = item.educational_video ?? []
+            const fc = item.first_aid_content
+            const guides = item.guide ?? []
+            const videos = item.educational_video ?? []
             const quizzes = item.quiz ?? []
-            const type    = guides.length ? 'Guide' : quizzes.length ? 'Quiz' : videos.length ? 'Video' : null
-            const title   = guides[0]?.title ?? videos[0]?.title ?? quizzes[0]?.title ?? '—'
-            const isOpen  = expanded === item.reviewID
-            const isEdit  = mode[item.reviewID] === 'edit'
-            const draft   = drafts[item.reviewID]
-            const fb      = feedback[item.reviewID]
-            const isConf  = confirm === item.reviewID
+            const type = guides.length ? 'Guide' : quizzes.length ? 'Quiz' : videos.length ? 'Video' : null
+            const title = guides[0]?.title ?? videos[0]?.title ?? quizzes[0]?.title ?? '—'
+            const isOpen = expanded === item.reviewID
+            const isEdit = mode[item.reviewID] === 'edit'
+            const draft = drafts[item.reviewID]
+            const fb = feedback[item.reviewID]
+            const isConf = confirm === item.reviewID
 
             const typeBadge: React.CSSProperties = {
               fontSize: '10px', fontWeight: '700', padding: '2px 7px', borderRadius: '999px',

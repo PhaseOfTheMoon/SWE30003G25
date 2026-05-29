@@ -89,10 +89,8 @@ export default function Navbar() {
         ) : (
           <div style={{ display: "flex", gap: "24px", fontSize: "15px" }}>
             <Link href="/" style={{ color: "#374151", textDecoration: "none" }}>Home</Link>
-            <Link href="/about" style={{ color: "#374151", textDecoration: "none" }}>About</Link>
-            <Link href="/guide" style={{ color: "#374151", textDecoration: "none" }}>First-Aid Guide</Link>
+            <Link href="/FirstAidContent/guide" style={{ color: "#374151", textDecoration: "none" }}>First-Aid Content</Link>
             <Link href="/emergency" style={{ color: "#374151", textDecoration: "none" }}>Emergency</Link>
-            <Link href="/contact" style={{ color: "#374151", textDecoration: "none" }}>Contact</Link>
           </div>
         )}
 

@@ -1,6 +1,6 @@
 'use client'
 
-import DashboardLayout from '@/components/dashboardLayout'
+import DashboardLayout from '@/app/components/dashboardLayout'
 import { useEffect, useState } from 'react'
 import {
   viewStaffContent,
@@ -25,14 +25,14 @@ type GuideStepEdit = {
 }
 
 const STATUS_META: Record<string, { bg: string; border: string; text: string; dot: string; label: string }> = {
-  pending:   { bg: '#fffbeb', border: '#fde68a', text: '#92400e', dot: '#f59e0b', label: 'Pending Review' },
-  validated: { bg: '#f0fdf4', border: '#bbf7d0', text: '#166534', dot: '#16a34a', label: 'Validated'      },
-  rejected:  { bg: '#fff1f2', border: '#fecdd3', text: '#9f1239', dot: '#dc2626', label: 'Rejected'       },
-  published: { bg: '#eff6ff', border: '#bfdbfe', text: '#1e40af', dot: '#3b82f6', label: 'Published'      },
+  pending: { bg: '#fffbeb', border: '#fde68a', text: '#92400e', dot: '#f59e0b', label: 'Pending Review' },
+  validated: { bg: '#f0fdf4', border: '#bbf7d0', text: '#166534', dot: '#16a34a', label: 'Validated' },
+  rejected: { bg: '#fff1f2', border: '#fecdd3', text: '#9f1239', dot: '#dc2626', label: 'Rejected' },
+  published: { bg: '#eff6ff', border: '#bfdbfe', text: '#1e40af', dot: '#3b82f6', label: 'Published' },
 }
 
 const CATEGORY_ICON: Record<string, string> = {
-  'Emergency Care':  '🚨',
+  'Emergency Care': '🚨',
   'First Aid': '🩹',
   'Preventive Care': '🛡️',
   'Behavioural': '🧠',
@@ -75,7 +75,7 @@ export default function StaffPendingReviewPage() {
   // It also sets the editing state to the current reviewID to show the edit form.
   function startEdit(review: ContentReview) {
     const guides = (review as any).guide ?? []
-    const first  = guides[0]
+    const first = guides[0]
     setDrafts(prev => ({
       ...prev,
       [review.reviewID]: {
@@ -147,10 +147,10 @@ export default function StaffPendingReviewPage() {
   }
 
   const counts = {
-    all:       reviews.length,
-    pending:   reviews.filter(r => r.status === 'pending').length,
+    all: reviews.length,
+    pending: reviews.filter(r => r.status === 'pending').length,
     validated: reviews.filter(r => r.status === 'validated').length,
-    rejected:  reviews.filter(r => r.status === 'rejected').length,
+    rejected: reviews.filter(r => r.status === 'rejected').length,
     published: reviews.filter(r => r.status === 'published').length,
   }
 
@@ -160,10 +160,10 @@ export default function StaffPendingReviewPage() {
 
   // When the staff clicks on a content review in the list, we want to show its details in an expanded panel. The toggleExpanded function sets the expanded state to the reviewID of the clicked review, or collapses it if it's already expanded.
   const tabs = [
-    { key: 'all'       as const, label: 'All',       count: counts.all },
-    { key: 'pending'   as const, label: 'Pending',   count: counts.pending },
+    { key: 'all' as const, label: 'All', count: counts.all },
+    { key: 'pending' as const, label: 'Pending', count: counts.pending },
     { key: 'validated' as const, label: 'Validated', count: counts.validated },
-    { key: 'rejected'  as const, label: 'Rejected',  count: counts.rejected },
+    { key: 'rejected' as const, label: 'Rejected', count: counts.rejected },
     { key: 'published' as const, label: 'Published', count: counts.published },
   ]
 
@@ -273,10 +273,10 @@ export default function StaffPendingReviewPage() {
             const isEditing = editing === review.reviewID
             const draft = drafts[review.reviewID]
             const fb = feedback[review.reviewID]
-            const isRejected      = review.status === 'rejected'
-            const isValidated     = review.status === 'validated'
+            const isRejected = review.status === 'rejected'
+            const isValidated = review.status === 'validated'
             const isValidatedEdit = validatedEditing === review.reviewID
-            const vsteps          = validatedSteps[review.reviewID] ?? []
+            const vsteps = validatedSteps[review.reviewID] ?? []
 
             return (
               <div

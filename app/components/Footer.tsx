@@ -23,9 +23,9 @@ export default function Footer() {
         <div>
           <h4 style={{ color: "white", fontWeight: "600", marginBottom: "12px" }}>Services</h4>
           <ul style={{ listStyle: "none", padding: 0, fontSize: "13px" }}>
-            <li style={{ marginBottom: "8px" }}><Link href="/guide" style={{ color: "#9ca3af", textDecoration: "none" }}>First Aid Guide</Link></li>
-            <li style={{ marginBottom: "8px" }}><Link href="/video" style={{ color: "#9ca3af", textDecoration: "none" }}>Educational Videos</Link></li>
-            <li style={{ marginBottom: "8px" }}><Link href="/quiz" style={{ color: "#9ca3af", textDecoration: "none" }}>First Aid Quiz</Link></li>
+            <li style={{ marginBottom: "8px" }}><Link href="/FirstAidContent/guide" style={{ color: "#9ca3af", textDecoration: "none" }}>First Aid Guide</Link></li>
+            <li style={{ marginBottom: "8px" }}><Link href="/FirstAidContent/video" style={{ color: "#9ca3af", textDecoration: "none" }}>Educational Videos</Link></li>
+            <li style={{ marginBottom: "8px" }}><Link href="/FirstAidContent/quiz" style={{ color: "#9ca3af", textDecoration: "none" }}>First Aid Quiz</Link></li>
             <li style={{ marginBottom: "8px" }}><Link href="/emergency" style={{ color: "#9ca3af", textDecoration: "none" }}>Emergency Contact</Link></li>
           </ul>
         </div>
@@ -33,7 +33,15 @@ export default function Footer() {
           <h4 style={{ color: "white", fontWeight: "600", marginBottom: "12px" }}>Contact</h4>
           <ul style={{ listStyle: "none", padding: 0, fontSize: "13px" }}>
             <li style={{ marginBottom: "8px" }}>📧 info@petfirstaid.com</li>
-            <li style={{ marginBottom: "8px" }}>📞 +60 12-345 6789</li>
+
+            <li style={{ marginBottom: "6px" }}><b>24Hr Pet Emergency Hotline</b></li>
+            <li style={{ marginBottom: "8px" }}>📞 +60 3-7803 9494</li>
+
+            <li style={{ marginBottom: "6px" }}><b>Veterinary Association Helpline</b></li>
+            <li style={{ marginBottom: "8px" }}>📞 +60 3-8888 2222</li>
+
+            <li style={{ marginBottom: "6px" }}><b>Animal Poison Control</b></li>
+            <li style={{ marginBottom: "8px" }}>📞 +60 3-6666 5555</li>
             <li style={{ marginBottom: "8px" }}>🕐 Mon to Fri, 8am to 5pm</li>
           </ul>
         </div>

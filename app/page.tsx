@@ -32,7 +32,7 @@ const services = [
   },
   {
     icon: "🚨",
-    title: "Emergency Contact",
+    title: "Emergency Service",
     desc: "Find 24 hour emergency hotlines and nearby veterinary clinics based on your location.",
     href: "/emergency",
   },
@@ -111,8 +111,8 @@ export default function HomePage() {
               <Link href="/register" style={{ padding: "12px 24px", backgroundColor: "#dc2626", color: "white", borderRadius: "4px", textDecoration: "none", fontWeight: "bold" }}>
                 Get Started
               </Link>
-              <Link href="/" style={{ padding: "12px 24px", border: "2px solid white", color: "white", borderRadius: "4px", textDecoration: "none", fontWeight: "bold" }}>
-                Learn More
+              <Link href="/FirstAidContent/guide" style={{ padding: "12px 24px", border: "2px solid white", color: "white", borderRadius: "4px", textDecoration: "none", fontWeight: "bold" }}>
+                First Aid Guide
               </Link>
             </div>
           </div>
@@ -155,9 +155,7 @@ export default function HomePage() {
               <li style={{ marginBottom: "8px", color: "#374151" }}>✔ Available for dogs, cats and small pets</li>
               <li style={{ marginBottom: "8px", color: "#374151" }}>✔ 24/7 emergency contact support</li>
             </ul>
-            <Link href="/about" style={{ padding: "10px 24px", backgroundColor: "#dc2626", color: "white", borderRadius: "4px", textDecoration: "none", fontWeight: "bold" }}>
-              Learn More
-            </Link>
+  
           </div>
 
           <div style={{ flex: 1, minWidth: "280px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>

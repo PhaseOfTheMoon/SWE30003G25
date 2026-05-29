@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import DashboardLayout from '@/components/dashboardLayout'
+import DashboardLayout from '@/app/components/dashboardLayout'
 import supabase from '@/lib/supabase'
 import {
   createFirstAidContent,
@@ -28,7 +28,7 @@ const CATEGORIES = ['Choking', 'Bleeding', 'Burns', 'Fracture', 'Poisoning', 'Se
 type ContentType = 'guide' | 'video' | 'quiz'
 
 type GuideStep = {
-  stepNumber:  number
+  stepNumber: number
   instruction: string
   videoUrl: string
 }
@@ -58,12 +58,12 @@ export default function StaffContentPage() {
       const { data, error } = await supabase
         .from('veterinarian')
         .select('id, profiles!veterinarian_id_fkey(name)')
-        console.log('vets data:', data, 'error:', error)
+      console.log('vets data:', data, 'error:', error)
 
       if (!error && data) {
         setVets(data.map((v: any) => ({
           vetID: v.id,
-          name:  v.profiles?.name ?? 'Unknown Vet',
+          name: v.profiles?.name ?? 'Unknown Vet',
         })))
       }
     }
@@ -95,8 +95,10 @@ export default function StaffContentPage() {
   // quiz
   const [quizTitle, setQuizTitle] = useState('')
   const [questions, setQuestions] = useState<QuizQuestion[]>([
-    { question: '', options: ['', '', '', ''], answer: 0 },
+    { question: '', options: ['', '', '', ''], answer: '' },
   ])
+  // Track correct answer by index in UI; converted to text on save
+  const [answerIndexes, setAnswerIndexes] = useState<number[]>([-1])
 
   // Step 3
   const [selectedVet, setSelectedVet] = useState('')
@@ -123,7 +125,7 @@ export default function StaffContentPage() {
         clearInterval(id)
         if (savedGuides.length) { setUpdTitle(savedGuides[0].title); setUpdBody(savedGuides[0].instruction); setUpdVideoUrl(savedGuides[0].videoUrl ?? '') }
         if (savedVideo) { setUpdTitle(savedVideo.title); setUpdBody(savedVideo.description ?? ''); setUpdVideoUrl(savedVideo.videoUrl) }
-        if (savedQuiz)  { setUpdTitle(savedQuiz.title) }
+        if (savedQuiz) { setUpdTitle(savedQuiz.title) }
       }
     }, 5000)
     return () => clearInterval(id)
@@ -183,7 +185,12 @@ export default function StaffContentPage() {
     // and provide a better UI for managing questions and options, but for simplicity we will just check that all fields are filled in before saving.
     setSavingType(true); setFeedback(null)
     try {
-      const quiz = await createQuiz({ contentID: content.contentID, title: quizTitle, questions })
+      // Convert answerIndex to answer text before saving
+      const questionsWithAnswer = questions.map((q, i) => ({
+        ...q,
+        answer: answerIndexes[i] >= 0 ? q.options[answerIndexes[i]] : '',
+      }))
+      const quiz = await createQuiz({ contentID: content.contentID, title: quizTitle, questions: questionsWithAnswer, petType, emergencyCategory })
       setSavedQuiz(quiz)
       setFeedback({ msg: 'Quiz saved.', ok: true })
     } catch (e: any) { setFeedback({ msg: 'Error: ' + e.message, ok: false }) }
@@ -212,7 +219,7 @@ export default function StaffContentPage() {
       } else if (savedVideo) {
         await updateEducationalVideo(savedVideo.videoID, updTitle, updVideoUrl, updBody)
       } else if (savedQuiz) {
-        await updateQuiz(savedQuiz.quizID, updTitle, questions)
+        await updateQuiz(savedQuiz.quizID, updTitle, questions, petType, emergencyCategory)
       }
       setFeedback({ msg: 'Content updated successfully.', ok: true })
     } catch (e: any) { setFeedback({ msg: 'Error: ' + e.message, ok: false }) }
@@ -239,10 +246,12 @@ export default function StaffContentPage() {
       idx === qi ? { ...q, options: q.options.map((o, j) => j === oi ? value : o) } : q))
   }
   function addQuestion() {
-    setQuestions(prev => [...prev, { question: '', options: ['', '', '', ''], answer: 0 }])
+    setQuestions(prev => [...prev, { question: '', options: ['', '', '', ''], answer: '' }])
+    setAnswerIndexes(prev => [...prev, -1])
   }
   function removeQuestion(i: number) {
     setQuestions(prev => prev.filter((_, idx) => idx !== i))
+    setAnswerIndexes(prev => prev.filter((_, idx) => idx !== i))
   }
 
   return (
@@ -395,8 +404,8 @@ export default function StaffContentPage() {
                     <div className="space-y-2">
                       {q.options.map((opt, oi) => (
                         <div key={oi} className="flex items-center gap-2">
-                          <input type="radio" name={`q${qi}-answer`} checked={q.answer === oi}
-                            onChange={() => updateQuestion(qi, 'answer', oi)}
+                          <input type="radio" name={`q${qi}-answer`} checked={answerIndexes[qi] === oi}
+                            onChange={() => setAnswerIndexes(prev => prev.map((v, idx) => idx === qi ? oi : v))}
                             className="w-4 h-4 shrink-0 text-blue-600" />
                           <input type="text" value={opt} onChange={e => updateOption(qi, oi, e.target.value)}
                             placeholder={`Option ${oi + 1}`} className={INPUT_CLS} />
@@ -421,7 +430,7 @@ export default function StaffContentPage() {
             <SavedBadge>
               {savedGuides.length > 0 && `Guide saved — ${savedGuides.length} step${savedGuides.length > 1 ? 's' : ''}`}
               {savedVideo && `Video saved — ID: ${savedVideo.videoID}`}
-              {savedQuiz  && `Quiz saved — ID: ${savedQuiz.quizID}`}
+              {savedQuiz && `Quiz saved — ID: ${savedQuiz.quizID}`}
             </SavedBadge>
           )}
         </Step>

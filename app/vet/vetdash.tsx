@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import DashboardLayout from "@/components/dashboardLayout";
+import DashboardLayout from "@/app/components/dashboardLayout";
 import Link from "next/link";
 import supabase from "@/lib/supabase";
 import { VET_NAV } from '@/app/components/sidebar'
@@ -140,7 +140,7 @@ export default function VetDashboardPage() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginBottom: "32px" }}>
         <StatCard icon="💬" label="Assigned Enquiries" value={stats.assignedEnquiries} sub="Awaiting your response" href="/vet/assignedEnquiries" accent />
         <StatCard icon="✅" label="Enquiries Responded" value={stats.respondedEnquiries} sub="Replied to pet owners" href="/vet/assignedEnquiries" />
-        <StatCard icon="🔬" label="Pending Reviews" value={stats.pendingReviews} sub="Content awaiting validation" href="/vet/validateContent?status=pending"   accent />
+        <StatCard icon="🔬" label="Pending Reviews" value={stats.pendingReviews} sub="Content awaiting validation" href="/vet/validateContent?status=pending" accent />
         <StatCard icon="✔️" label="Validated Content" value={stats.validatedContent} sub="Guides approved by you" href="/vet/validateContent?status=validated" />
         <StatCard icon="✖️" label="Rejected Content" value={stats.rejectedContent} sub="Sent back for revision" href="/vet/validateContent?status=rejected" />
       </div>

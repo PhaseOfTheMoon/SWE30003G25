@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import DashboardLayout from '@/components/dashboardLayout'
+import DashboardLayout from '@/app/components/dashboardLayout'
 import {
   viewAllVetContent,
   validateContent,
@@ -117,8 +117,8 @@ export default function ValidateContentPage() {
             className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors
               ${tab === s
                 ? s === 'pending' ? 'bg-yellow-100 border-yellow-400 text-yellow-800'
-                : s === 'validated' ? 'bg-green-100  border-green-400  text-green-800'
-                : 'bg-red-100 border-red-400 text-red-800'
+                  : s === 'validated' ? 'bg-green-100  border-green-400  text-green-800'
+                    : 'bg-red-100 border-red-400 text-red-800'
                 : 'bg-white border-gray-200 text-gray-500 hover:border-gray-400'}`}
           >
             {s.charAt(0).toUpperCase() + s.slice(1)}
@@ -141,18 +141,18 @@ export default function ValidateContentPage() {
             const content = (review as any).first_aid_content
             const guides = content?.guide ?? []
             const quizzes = content?.quiz ?? []
-            const videos  = content?.educational_video ?? []
+            const videos = content?.educational_video ?? []
 
             const typeBadges: { label: string; cls: string }[] = [
-              ...(guides.length  > 0 ? [{ label: 'Guide', cls: 'bg-blue-50 text-blue-700' }] : []),
-              ...(quizzes.length > 0 ? [{ label: 'Quiz',  cls: 'bg-purple-50 text-purple-700' }] : []),
-              ...(videos.length  > 0 ? [{ label: 'Video', cls: 'bg-orange-50 text-orange-700' }] : []),
+              ...(guides.length > 0 ? [{ label: 'Guide', cls: 'bg-blue-50 text-blue-700' }] : []),
+              ...(quizzes.length > 0 ? [{ label: 'Quiz', cls: 'bg-purple-50 text-purple-700' }] : []),
+              ...(videos.length > 0 ? [{ label: 'Video', cls: 'bg-orange-50 text-orange-700' }] : []),
             ]
 
             const subtitles = [
-              ...guides.map((g: any)  => g.title),
+              ...guides.map((g: any) => g.title),
               ...quizzes.map((q: any) => q.title),
-              ...videos.map((v: any)  => v.title),
+              ...videos.map((v: any) => v.title),
             ].filter(Boolean)
 
             return (
@@ -204,7 +204,7 @@ export default function ValidateContentPage() {
               const content = (selected as any).first_aid_content
               const guides = content?.guide ?? []
               const quizzes = content?.quiz ?? []
-              const videos  = content?.educational_video ?? []
+              const videos = content?.educational_video ?? []
 
               return (
                 <>
