@@ -173,7 +173,7 @@ export default function EnquiryPage() {
       <section style={{ minHeight: '80vh', backgroundColor: '#f9fafb', padding: '40px 16px' }}>
         <div style={{ maxWidth: '720px', margin: '0 auto' }}>
 
-          <Link href="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#6b7280', fontSize: '14px', marginBottom: '24px', textDecoration: 'none' }}>
+          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#6b7280', fontSize: '14px', marginBottom: '24px', textDecoration: 'none' }}>
             ← Back to Dashboard
           </Link>
 
