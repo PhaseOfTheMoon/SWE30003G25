@@ -13,8 +13,8 @@ import {
 } from '@/lib/content'
 import supabase from '@/lib/supabase'
 
-// Convert YouTube watch/shortlink URLs to embed URLs for iframe rendering.
-function toEmbedUrl(url: string): string {
+// Convert YouTube watch/shortlink URLs to embed URLs for iframe rendering. (WC)
+function toEmbedUrl(url: string): string { 
   try {
     const u = new URL(url)
     if (u.hostname.includes('youtube.com') && u.searchParams.get('v')) {
@@ -29,6 +29,7 @@ function toEmbedUrl(url: string): string {
 
 type Step = 'pet' | 'category' | 'video'
 
+// VideoPage allows pet owners to watch educational videos related to pet first-aid. It guides users through selecting their pet type and emergency category before presenting relevant videos. Only videos linked to published first-aid content are shown, ensuring all material is reviewed by staff. (WC)
 export default function VideoPage() {
   const [step, setStep] = useState<Step>('pet')
   const [petTypes, setPetTypes] = useState<string[]>([])
@@ -43,7 +44,7 @@ export default function VideoPage() {
   const [loadingVideo, setLoadingVideo] = useState(false)
   const [error, setError] = useState('')
 
-  // Fetch available pet types — published only
+  // Fetch available pet types — published only (WC)
   useEffect(() => {
     async function loadPetTypes() {
       try {
@@ -58,7 +59,7 @@ export default function VideoPage() {
     loadPetTypes()
   }, [])
 
-  // Fetch categories for selected pet — published only
+  // Fetch categories for selected pet — published only (WC)
   async function handleSelectPet(pet: string) {
     setSelectedPet(pet)
     setSelectedCategory('')
@@ -76,14 +77,14 @@ export default function VideoPage() {
     }
   }
 
-  // Fetch video for selected pet + category — published content only
+  // Fetch video for selected pet + category — published content only (WC)
   async function handleSelectCategory(cat: string) {
     setSelectedCategory(cat)
     setStep('video')
     setLoadingVideo(true)
     setError('')
     try {
-      // Join through content_review to only surface published content
+      // Join through content_review to only surface published content (WC)
       const { data: reviewed, error: revErr } = await supabase
         .from('content_review')
         .select('contentID')
@@ -101,7 +102,7 @@ export default function VideoPage() {
       if (err) throw new Error(err.message)
       if (!data || data.length === 0) { setVideo(null); return }
 
-      // Find the contentID that actually has a video
+      // Find the contentID that actually has a video (WC)
       const matchIDs = data.map((r: any) => r.contentID)
       const { data: vidData, error: vidErr } = await supabase
         .from('educational_video')

@@ -15,6 +15,8 @@ type StatCardProps = {
   accent?: boolean;
 };
 
+// The StatCard component is a reusable UI element that displays a statistic with an icon, label, value, and a link to view more details. 
+// It accepts props for the icon, label, value, subtext, href for the link, and an optional accent flag to highlight important stats. The card has hover effects for better interactivity. (WC)
 function StatCard({ icon, label, value, sub, href, accent }: StatCardProps) {
   return (
     <Link
@@ -48,8 +50,11 @@ function StatCard({ icon, label, value, sub, href, accent }: StatCardProps) {
   );
 }
 
+// The StaffDashboardPage component is the main dashboard for staff users. It displays an overview of key statistics (pending enquiries, assigned enquiries, responded enquiries, pending reviews, published content) in stat cards, 
+// along with a welcome message and quick action buttons. It also shows a list of recent enquiries with their status and time. The component fetches data from the API on mount to populate the stats and recent enquiries. (WC)
 type RecentEnquiry = { subject: string; status: string; time: string };
 
+// We define the StaffDashboardPage component which will serve as the main dashboard for staff users. It will display key statistics about enquiries and content, a welcome message, quick action buttons, and a list of recent enquiries. (WC)
 export default function StaffDashboardPage() {
   const [staffName, setStaffName] = useState("Staff");
   const [loading, setLoading] = useState(true);
@@ -121,6 +126,7 @@ export default function StaffDashboardPage() {
     init();
   }, []);
 
+  // The timeAgo function takes an ISO date string and returns a human-readable string representing how long ago that time was from the current time. It calculates the difference in seconds and formats it as "just now", "X min ago", "X hr ago", or "Xd ago" depending on the duration. (WC)
   function timeAgo(iso: string) {
     const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
     if (s < 60) return "just now";

@@ -15,6 +15,8 @@ type StatCardProps = {
   accent?: boolean;
 };
 
+// The StatCard component is a reusable UI component that displays a statistic with an icon, label, value, and a link to view more details. 
+// It accepts props for the icon, label, value, subtext, and the URL to link to. The component also has an optional "accent" prop that changes the styling to highlight certain cards (like assigned enquiries or pending reviews) to draw the veterinarian's attention. (WC)
 function StatCard({ icon, label, value, sub, href, accent }: StatCardProps) {
   return (
     <Link
@@ -47,6 +49,7 @@ function StatCard({ icon, label, value, sub, href, accent }: StatCardProps) {
   );
 }
 
+// The VetDashboardPage component is the main dashboard interface for veterinarians. It displays an overview of their assigned enquiries, responded enquiries, pending content reviews, and validated/rejected content. (WC)
 type RecentEnquiry = { subject: string; status: string; time: string };
 
 export default function VetDashboardPage() {
@@ -95,7 +98,7 @@ export default function VetDashboardPage() {
         );
       }
 
-      // Fetch content review counts for this vet
+      // Fetch content review counts for this vet (WC)
       const { data: reviews } = await supabase
         .from("content_review")
         .select("status")
@@ -115,6 +118,8 @@ export default function VetDashboardPage() {
     init();
   }, []);
 
+  // The timeAgo function is a utility function that takes an ISO date string as input and returns a human-readable string representing how much time has passed since that date (e.g., "just now", "5 min ago", "2 hr ago", "3d ago"). 
+  // This is used to display the relative time of when enquiries were created in the recent enquiries list on the dashboard. (WC)
   function timeAgo(iso: string) {
     const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
     if (s < 60) return "just now";

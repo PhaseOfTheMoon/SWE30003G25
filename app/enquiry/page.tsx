@@ -6,6 +6,7 @@ import Navbar from '@/app/components/Navbar'
 import Footer from '@/app/components/Footer'
 import supabase from '@/lib/supabase'
 
+// The EnquiryPage component allows pet owners to submit new enquiries and view their enquiry history.
 type Enquiry = {
   enquiryID: string
   subject: string
@@ -46,7 +47,7 @@ export default function EnquiryPage() {
     })
   }, [])
 
-  // Load history when switching to history tab
+  // Load history when switching to history tab (WC)
   useEffect(() => {
     if (tab === 'history' && petOwnerID) loadHistory()
   }, [tab, petOwnerID])
@@ -66,7 +67,7 @@ export default function EnquiryPage() {
       const rows = data ?? []
       setEnquiries(rows)
 
-      // Compute which responded enquiries haven't been seen yet
+      // Compute which responded enquiries haven't been seen yet (WC)
       const seenRaw = localStorage.getItem(`seen_responses_${petOwnerID}`)
       const seen: string[] = seenRaw ? JSON.parse(seenRaw) : []
       const unread = rows
@@ -80,6 +81,7 @@ export default function EnquiryPage() {
     }
   }
 
+  // The handleSubmit function is responsible for submitting a new enquiry. It validates the input, sends the enquiry data to the backend, and provides feedback to the user on the submission status. (WC)
   async function handleSubmit() {
     if (!subject.trim() || !message.trim() || !petOwnerID) return
     setSubmitting(true)
@@ -99,6 +101,7 @@ export default function EnquiryPage() {
     }
   }
 
+  // The handleUpdate function allows users to update an existing enquiry that is still pending. It validates the input, sends the updated data to the backend, and provides feedback on the update status. (WC)
   async function handleUpdate() {
     if (!editingID || !subject.trim() || !message.trim()) return
     setSubmitting(true)
@@ -123,6 +126,7 @@ export default function EnquiryPage() {
     }
   }
 
+  // The handleDelete function allows users to delete an existing enquiry that is still pending. It confirms the deletion with the user and sends the delete request to the backend. (WC)
   async function handleDelete(enquiryID: string) {
     if (!confirm('Delete this enquiry?')) return
     try {
@@ -140,6 +144,7 @@ export default function EnquiryPage() {
     }
   }
 
+  // The startEdit function populates the form fields with the data of the enquiry that the user wants to edit. It sets the editingID state to indicate which enquiry is being edited and switches to the submit tab. (WC)
   function startEdit(enq: Enquiry) {
     setSubject(enq.subject)
     setMessage(enq.message)
@@ -148,6 +153,7 @@ export default function EnquiryPage() {
     setTab('submit')
   }
 
+  // The cancelEdit function resets the form fields and exits the editing mode. It clears the editingID state and any submission result messages. (WC)
   function cancelEdit() {
     setSubject('')
     setMessage('')
@@ -155,6 +161,7 @@ export default function EnquiryPage() {
     setSubmitResult(null)
   }
 
+  // The timeAgo function takes an ISO date string and returns a human-readable string indicating how long ago that date was from the current time. It formats the output in seconds, minutes, hours, or days as appropriate. (WC)
   function timeAgo(iso: string) {
     const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
     if (s < 60) 

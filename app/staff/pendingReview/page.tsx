@@ -25,6 +25,8 @@ type GuideStepEdit = {
   videoUrl?: string
 }
 
+// We define some constants for mapping content review statuses to their corresponding colors and labels in the UI. 
+// This makes it easy to maintain a consistent design and also allows us to easily update the styling for each status in one place if needed. (WC)
 const STATUS_META: Record<string, { bg: string; border: string; text: string; dot: string; label: string }> = {
   pending: { bg: '#fffbeb', border: '#fde68a', text: '#92400e', dot: '#f59e0b', label: 'Pending Review' },
   validated: { bg: '#f0fdf4', border: '#bbf7d0', text: '#166534', dot: '#16a34a', label: 'Validated' },
@@ -32,6 +34,8 @@ const STATUS_META: Record<string, { bg: string; border: string; text: string; do
   published: { bg: '#eff6ff', border: '#bfdbfe', text: '#1e40af', dot: '#3b82f6', label: 'Published' },
 }
 
+// We define some constants for mapping content review statuses to their corresponding colors and labels in the UI. 
+// This makes it easy to maintain a consistent design and also allows us to easily update the styling for each status in one place if needed. (WC)
 const CATEGORY_ICON: Record<string, string> = {
   'Emergency Care': '🚨',
   'First Aid': '🩹',
@@ -56,7 +60,7 @@ export default function StaffPendingReviewPage() {
   useEffect(() => { loadContent() }, [])
 
   // Load the content reviews assigned to this staff from the API when the component mounts. We get the current user from Supabase auth, then call viewStaffContent with their user ID to fetch their content reviews. 
-  // The reviews are stored in state and displayed in the UI. We also handle loading state and errors.
+  // The reviews are stored in state and displayed in the UI. We also handle loading state and errors. (WC)
   async function loadContent() {
     setLoading(true)
     try {
@@ -73,7 +77,7 @@ export default function StaffPendingReviewPage() {
 
   // When the staff clicks "Edit" on a rejected content review, we want to populate the edit form with the existing content data so they can make changes. 
   // The startEdit function takes the review being edited, extracts the relevant fields (like title and instruction from the guide), and sets them in the drafts state keyed by reviewID. 
-  // It also sets the editing state to the current reviewID to show the edit form.
+  // It also sets the editing state to the current reviewID to show the edit form. (WC)
   function startEdit(review: ContentReview) {
     const guides = (review as any).guide ?? []
     const first = guides[0]
@@ -87,18 +91,18 @@ export default function StaffPendingReviewPage() {
     setEditing(review.reviewID)
   }
 
-  // When the staff finishes editing and clicks "Resubmit", we call handleResubmit which takes the current draft data for that review and sends it to the API via resubmitContent.
+  // When the staff finishes editing and clicks "Resubmit", we call handleResubmit which takes the current draft data for that review and sends it to the API via resubmitContent. (WC)
   async function handleResubmit(review: ContentReview) {
     const draft = drafts[review.reviewID]
     if (!draft?.title.trim() || !draft?.instruction.trim()) return
     setSubmitting(true)
     try {
-      // Save the edited guide step first
+      // Save the edited guide step first (WC)
       const guides = (review as any).guide ?? []
       if (guides[0]) {
         await updateGuide(guides[0].guideID, draft.title, draft.instruction, guides[0].videoUrl ?? undefined)
       }
-      // Then resubmit for vet re-validation
+      // Then resubmit for vet re-validation (WC)
       const updated = await resubmitContent(review.reviewID)
       setReviews(prev => prev.map(r => r.reviewID === updated.reviewID ? updated : r))
       setEditing(null)
@@ -110,6 +114,8 @@ export default function StaffPendingReviewPage() {
     }
   }
 
+  // When the staff clicks "Publish" on a validated content review, we call handlePublish which sends a request to the API to publish the content. 
+  // If successful, we update the review in state with the latest data returned from the API (which should now have status "published") and show a success message. (WC)
   async function handlePublish(review: ContentReview) {
     setPublishing(review.reviewID)
     try {
@@ -123,6 +129,8 @@ export default function StaffPendingReviewPage() {
     }
   }
 
+  // When the staff clicks "Edit & Resubmit" on a validated content review, we want to allow them to make changes and resubmit for vet re-validation. 
+  // The startValidatedEdit function populates the validatedSteps state with the existing guide steps data for that review, and sets validatedEditing to the current reviewID to show the edit form. (WC)
   function startValidatedEdit(review: ContentReview) {
     const guides = (review as any).guide ?? []
     setValidatedSteps(prev => ({
@@ -137,6 +145,7 @@ export default function StaffPendingReviewPage() {
     setValidatedEditing(review.reviewID)
   }
 
+  // When the staff clicks "Save and Revalidate" on a validated content review, we call handleSaveAndRevalidate which saves the edited guide steps and resubmits the content for vet re-validation. (WC)
   async function handleSaveAndRevalidate(review: ContentReview) {
     const steps = validatedSteps[review.reviewID] ?? []
     if (steps.some(s => !s.title.trim() || !s.instruction.trim())) return
@@ -153,6 +162,7 @@ export default function StaffPendingReviewPage() {
     }
   }
 
+  // We compute some counts for each content review status to display in the tabs and banners. This allows the staff to quickly see how many items they have in each category (pending, validated, rejected, published) and also shows the total count. (WC)
   const counts = {
     all: reviews.length,
     pending: reviews.filter(r => r.status === 'pending').length,
@@ -162,10 +172,10 @@ export default function StaffPendingReviewPage() {
   }
 
   // We want to allow the staff to filter the content reviews by their status using tabs (All, Pending, Validated, Rejected). 
-  // The filtered variable computes the list of reviews to display based on the activeTab state. If "All" is selected, we show all reviews; otherwise, we filter by the selected status.
+  // The filtered variable computes the list of reviews to display based on the activeTab state. If "All" is selected, we show all reviews; otherwise, we filter by the selected status. (WC)
   const filtered = activeTab === 'all' ? reviews : reviews.filter(r => r.status === activeTab)
 
-  // When the staff clicks on a content review in the list, we want to show its details in an expanded panel. The toggleExpanded function sets the expanded state to the reviewID of the clicked review, or collapses it if it's already expanded.
+  // When the staff clicks on a content review in the list, we want to show its details in an expanded panel. The toggleExpanded function sets the expanded state to the reviewID of the clicked review, or collapses it if it's already expanded. (WC)
   const tabs = [
     { key: 'all' as const, label: 'All', count: counts.all },
     { key: 'pending' as const, label: 'Pending', count: counts.pending },

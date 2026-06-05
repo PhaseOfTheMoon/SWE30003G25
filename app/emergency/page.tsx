@@ -4,6 +4,7 @@ import Link from "next/link";
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
 
+// EmergencyPage displays important contact information for pet emergencies, including hotlines and nearby clinics. It provides a user-friendly interface for pet owners to quickly access help when their pet is in danger. (WC)
 const EMERGENCY_CONTACTS = [
   {
     name: "24Hr Pet Emergency Hotline",
@@ -42,6 +43,7 @@ const CLINIC = {
   mapsUrl: "https://www.google.com/maps/search/veterinary+clinic+petaling+jaya",
 };
 
+// EmergencyPage displays important contact information for pet emergencies, including hotlines and nearby clinics. It provides a user-friendly interface for pet owners to quickly access help when their pet is in danger. (WC)
 export default function EmergencyPage() {
   return (
     <main style={{ minHeight: "100vh", backgroundColor: "#f9fafb" }}>

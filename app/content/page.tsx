@@ -12,6 +12,8 @@ import {
 
 type LoadState = "loading" | "ready" | "error";
 
+// The ContentPage component is responsible for displaying the first-aid content to users. 
+// It fetches the published first-aid content from the backend and organizes it by pet type. Users can select a pet type to view the relevant guides and educational videos. The component also handles loading states, error messages, and provides a user-friendly interface for navigating the content. (WC)
 function toYouTubeEmbed(url: string): string | null {
   try {
     const u = new URL(url);
@@ -36,6 +38,7 @@ function toYouTubeEmbed(url: string): string | null {
   }
 }
 
+// The ContentPage component is responsible for displaying the first-aid content to users. (WC)
 export default function ContentPage() {
   const [state, setState] = useState<LoadState>("loading");
   const [items, setItems] = useState<FirstAidContentBundle[]>([]);

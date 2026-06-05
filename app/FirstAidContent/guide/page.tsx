@@ -16,6 +16,8 @@ import supabase from '@/lib/supabase'
 
 type Step = 'pet' | 'category' | 'guide'
 
+// The toEmbedUrl function takes a YouTube URL and converts it into an embeddable URL format. It supports various YouTube URL formats, including standard watch URLs, shortened youtu.be links, embed links, and shorts links. 
+// If the input URL is valid and recognized, it returns the corresponding embed URL; otherwise, it returns null. (WC)
 function toEmbedUrl(url: string): string | null {
   try {
     const u = new URL(url)
@@ -38,6 +40,7 @@ function toEmbedUrl(url: string): string | null {
   return null
 }
 
+// GuidePage is the main interface for pet owners to access first-aid guides for their pets. It allows users to select their pet type and the emergency category to view step-by-step instructions and educational videos. The page also handles user authentication to ensure that only registered pet owners can access the content. (WC)
 const CATEGORY_EMOJI: Record<string, string> = {
   Choking: '😮', Bleeding: '🩸', Burns: '🔥', Fracture: '🦴',
   Poisoning: '☠️', Seizure: '⚡',
@@ -47,6 +50,8 @@ const PET_EMOJI: Record<string, string> = {
   Dog: '🐕', Cat: '🐈', Bird: '🐦', Rabbit: '🐇', Other: '🐾',
 }
 
+// The GuidePage component manages the state and logic for displaying first-aid guides based on user selections. It fetches the available pet types and emergency categories from the backend, handles user interactions for selecting a pet and category, and retrieves the corresponding guide steps and educational videos. 
+// The component also includes error handling and loading states to enhance the user experience. (WC)
 export default function GuidePage() {
   const [step, setStep] = useState<Step>('pet')
   const [petTypes, setPetTypes] = useState<string[]>([])
@@ -64,7 +69,7 @@ export default function GuidePage() {
   const [activeStep, setActiveStep] = useState(0)
   const [error, setError] = useState('')
 
-  // ── Permission state 
+  //  Permission state 
   const [isPetOwner, setIsPetOwner] = useState(false)
   const [authLoading, setAuthLoading] = useState(true)
 
@@ -90,7 +95,7 @@ export default function GuidePage() {
     checkRole()
   }, [])
 
-  // Step 1: load pet types that have at least one validated content record
+  // Step 1: load pet types that have at least one validated content record (WC)
   useEffect(() => {
     async function loadValidatedPetTypes() {
       try {
@@ -118,7 +123,7 @@ export default function GuidePage() {
     loadValidatedPetTypes()
   }, [])
 
-  // Step 2: select a pet → load its emergency categories (validated only)
+  // Step 2: select a pet → load its emergency categories (validated only) (WC)
   async function handleSelectPet(pet: string) {
     setSelectedPet(pet)
     setSelectedCategory('')
@@ -151,7 +156,7 @@ export default function GuidePage() {
     }
   }
 
-  // Step 3: select a category → load guide steps + optional video (validated only)
+  // Step 3: select a category → load guide steps + optional video (validated only) (WC)
   async function handleSelectCategory(category: string) {
     setSelectedCategory(category)
     setStep('guide')
@@ -236,14 +241,14 @@ export default function GuidePage() {
             </p>
           </header>
 
-          {/* ── Auth loading spinner ── */}
+          {/* Auth loading spinner */}
           {authLoading && (
             <div style={{ textAlign: 'center', padding: '60px 0', color: '#9ca3af', fontSize: '15px' }}>
               Checking access...
             </div>
           )}
 
-          {/* ── Access denied screen ── */}
+          {/* Access denied screen */}
           {!authLoading && !isPetOwner && (
             <div style={{
               marginTop: '32px',
@@ -296,7 +301,7 @@ export default function GuidePage() {
             </div>
           )}
 
-          {/* ── Main guide content — only shown to pet owners ── */}
+          {/* Main guide content — only shown to pet owners */}
           {!authLoading && isPetOwner && (
             <>
               {/* Breadcrumb */}
@@ -333,7 +338,7 @@ export default function GuidePage() {
                 </div>
               )}
 
-              {/* ── Step 1: Pet selection ── */}
+              {/* Step 1: Pet selection */}
               {step === 'pet' && (
                 <>
                   {loadingPets ? (
@@ -368,7 +373,7 @@ export default function GuidePage() {
                 </>
               )}
 
-              {/* ── Step 2: Category selection ── */}
+              {/* Step 2: Category selection */}
               {step === 'category' && (
                 <>
                   {loadingCats ? (
@@ -403,7 +408,7 @@ export default function GuidePage() {
                 </>
               )}
 
-              {/* ── Step 3: Guide steps ── */}
+              {/* Step 3: Guide steps */}
               {step === 'guide' && (
                 <>
                   {loadingGuide ? (

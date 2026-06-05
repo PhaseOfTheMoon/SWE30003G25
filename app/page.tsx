@@ -11,6 +11,8 @@ const heroSlides = [
   "/images/hamster.jpg",
 ];
 
+// The services array defines the different services offered by the application, such as the first-aid guide, educational videos, quizzes, emergency service, and enquiry submission. 
+// Each service has an icon, title, description, and a link to the corresponding page where users can access that service. This array is used to dynamically render the services section on the homepage. (WC)
 const services = [
   {
     icon: "📖",
@@ -44,6 +46,7 @@ const services = [
   },
 ];
 
+// The reasons array defines the key reasons why users should choose this application for their pet first-aid needs. Each reason has an icon, title, and description. This array is used to dynamically render the benefits section on the homepage. (WC)
 const reasons = [
   {
     icon: "✅",
@@ -67,6 +70,8 @@ const reasons = [
   },
 ];
 
+// The HomePage component is the main landing page of the application. It features a hero section with a rotating background image and a call-to-action, an about section that explains the purpose of the app, a services section that highlights the key features, a reasons section that emphasizes the benefits of using the app, and a final call-to-action banner encouraging users to register. 
+// The component uses React state and effects to manage the hero image rotation and renders content dynamically based on predefined arrays for services and reasons. (WC)
 export default function HomePage() {
   const [current, setCurrent] = useState(0);
 

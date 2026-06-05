@@ -19,6 +19,8 @@ const INPUT = {
 
 type Mode = 'view' | 'edit'
 
+// This page allows staff to view, edit and delete their published content (guides, videos, quizzes). It fetches the staff's published content from the API and displays it in a list. 
+// Each item can be expanded to show details and an edit form. Staff can make changes and save them, which updates the content via the API. They can also delete content, which removes it from the list. (WC)
 export default function PublishedContentPage() {
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -32,6 +34,8 @@ export default function PublishedContentPage() {
 
   useEffect(() => { load() }, [])
 
+  // The load function fetches the staff's published content from the API when the page loads. It sets the loading state to true while fetching, and updates the items state with the published content once it is retrieved. 
+  // If there is an error during fetching, it will be caught and logged, and loading will be set to false in the finally block. (WC)
   async function load() {
     setLoading(true)
     try {
@@ -44,6 +48,7 @@ export default function PublishedContentPage() {
     }
   }
 
+  // When the staff clicks "Edit" on a published content item, we call startEdit which populates the drafts state with the existing data for that item and sets the mode to "edit". This allows the edit form to be displayed with the current values pre-filled. (WC)
   function startEdit(item: any) {
     const guides = item.guide ?? []
     const videos = item.educational_video ?? []
@@ -59,6 +64,7 @@ export default function PublishedContentPage() {
     setMode(prev => ({ ...prev, [item.reviewID]: 'edit' }))
   }
 
+  // The handleSave function saves the edited content for a published item. It updates the drafts state with the edited values and calls the appropriate API functions to update the content. (WC)
   async function handleSave(item: any) {
     const draft = drafts[item.reviewID]
     if (!draft) return
@@ -91,6 +97,7 @@ export default function PublishedContentPage() {
     }
   }
 
+  // The handleDelete function deletes a published content item. It calls the appropriate API function to remove the content and updates the items state to reflect the deletion. (WC)
   async function handleDelete(item: any) {
     const contentID = item.first_aid_content?.contentID ?? item.contentID
     setDeleting(item.reviewID)

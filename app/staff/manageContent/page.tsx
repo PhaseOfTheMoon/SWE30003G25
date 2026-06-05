@@ -22,11 +22,15 @@ import {
 } from '@/lib/content'
 import { STAFF_NAV } from '@/app/components/sidebar'
 
+// Defines pet types and emergency categories as constants for dropdown selection in the form. 
+// In a real application, these might be fetched from the database or defined in a shared config file. (WC)
 const PET_TYPES = ['Dog', 'Cat', 'Bird', 'Rabbit', 'Small Pets']
 const CATEGORIES = ['Choking', 'Bleeding', 'Burns', 'Fracture', 'Poisoning', 'Seizure']
 
 type ContentType = 'guide' | 'video' | 'quiz'
 
+// In a real application, we would likely want to define these types in a shared file and import them where needed, 
+// but for simplicity we will define them here. (WC)
 type GuideStep = {
   stepNumber: number
   instruction: string
@@ -54,7 +58,7 @@ export default function StaffContentPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) setStaffUserID(user.id)
 
-      // Fetch all vets joined with their profile name
+      // Fetch all vets joined with their profile name (WC)
       const { data, error } = await supabase
         .from('veterinarian')
         .select('id, profiles!veterinarian_id_fkey(name)')
@@ -81,7 +85,7 @@ export default function StaffContentPage() {
   const [savedVideo, setSavedVideo] = useState<EducationalVideo | null>(null)
   const [savedQuiz, setSavedQuiz] = useState<Quiz | null>(null)
 
-  // guide
+  // guide 
   const [guideTitle, setGuideTitle] = useState('')
   const [steps, setSteps] = useState<GuideStep[]>([
     { stepNumber: 1, instruction: '', videoUrl: '' },
@@ -97,7 +101,7 @@ export default function StaffContentPage() {
   const [questions, setQuestions] = useState<QuizQuestion[]>([
     { question: '', options: ['', '', '', ''], answer: '' },
   ])
-  // Track correct answer by index in UI; converted to text on save
+  // Track correct answer by index in UI; converted to text on save 
   const [answerIndexes, setAnswerIndexes] = useState<number[]>([-1])
 
   // Step 3
@@ -115,7 +119,7 @@ export default function StaffContentPage() {
 
   const typeSaved = !!(savedGuides.length || savedVideo || savedQuiz)
 
-  // Auto-refresh review status every 5 seconds if pending
+  // Auto-refresh review status every 5 seconds if pending (WC)
   useEffect(() => {
     if (!content || !reviewRecord || reviewRecord.status !== 'pending') return
     const id = setInterval(async () => {
@@ -131,6 +135,9 @@ export default function StaffContentPage() {
     return () => clearInterval(id)
   }, [content, reviewRecord, savedGuides, savedVideo, savedQuiz])
 
+  // handlers for creating content record, saving guide/video/quiz, requesting validation, updating content, etc. 
+  // Each handler manages its own loading state and feedback messages for success/error. In a real application, we would likely want to add more robust error handling and validation, 
+  // but for simplicity we will just check that required fields are filled in before allowing actions. (WC)
   async function handleCreateContent() {
     if (!petType || !emergencyCategory || !staffUserID) return
     setCreatingContent(true); setFeedback(null)
@@ -142,7 +149,7 @@ export default function StaffContentPage() {
     finally { setCreatingContent(false) }
   }
 
-  // handlers for saving guide, video, quiz 
+  // handlers for saving guide, video, quiz (WC)
   async function handleSaveGuide() {
     if (!content || !guideTitle || steps.some(s => !s.instruction)) return
     setSavingType(true); setFeedback(null)
@@ -162,7 +169,8 @@ export default function StaffContentPage() {
     finally { setSavingType(false) }
   }
 
-  // since we only allow creating one type of content per record, the guide and video handlers are mutually exclusive, so we can store the saved video/guide directly without needing an array
+  // since we only allow creating one type of content per record, the guide and video handlers are mutually exclusive, 
+  // so we can store the saved video/guide directly without needing an array (WC)
   async function handleSaveVideo() {
     if (!content || !videoTitle || !videoUrl) return
     setSavingType(true); setFeedback(null)
@@ -174,7 +182,7 @@ export default function StaffContentPage() {
     finally { setSavingType(false) }
   }
 
-  // for quiz, we allow multiple questions but they belong to the same quiz record, so we can store the saved quiz directly without needing an array
+  // for quiz, we allow multiple questions but they belong to the same quiz record, so we can store the saved quiz directly without needing an array (WC)
   async function handleSaveQuiz() {
     if (!content || !quizTitle || questions.some(q => !q.question)) return
     if (questions.some(q => q.options.some(o => !o.trim()))) {
@@ -182,7 +190,7 @@ export default function StaffContentPage() {
       return
     }
     // in a real application, we would likely want to validate the quiz more thoroughly (e.g. at least 2 questions, each with 4 options, etc.) 
-    // and provide a better UI for managing questions and options, but for simplicity we will just check that all fields are filled in before saving.
+    // and provide a better UI for managing questions and options, but for simplicity we will just check that all fields are filled in before saving. (WC)
     setSavingType(true); setFeedback(null)
     try {
       // Convert answerIndex to answer text before saving
@@ -197,6 +205,8 @@ export default function StaffContentPage() {
     finally { setSavingType(false) }
   }
 
+  // handler for requesting vet validation. In a real application, we would likely want to allow the staff to send update requests after review as well, 
+  // but for simplicity we will just implement the initial validation request here. (WC)
   async function handleRequestValidation() {
     if (!content || !selectedVet) return
     setRequesting(true); setFeedback(null)
@@ -209,7 +219,7 @@ export default function StaffContentPage() {
   }
 
   // for simplicity, the update handler can update the title and either guide steps or video description based on what content type was created. In a real application, 
-  // we would likely want more granular update handlers and forms for each content type.
+  // we would likely want more granular update handlers and forms for each content type. (WC)
   async function handleUpdateContent() {
     if (!updTitle) return
     setUpdating(true); setFeedback(null)
@@ -237,7 +247,7 @@ export default function StaffContentPage() {
     setSteps(prev => prev.filter((_, idx) => idx !== i).map((s, idx) => ({ ...s, stepNumber: idx + 1 })))
   }
 
-  // quiz helpers
+  // quiz form handlers
   function updateQuestion(i: number, field: keyof QuizQuestion, value: any) {
     setQuestions(prev => prev.map((q, idx) => idx === i ? { ...q, [field]: value } : q))
   }
@@ -503,7 +513,7 @@ export default function StaffContentPage() {
   )
 }
 
-// Reusable components for steps, fields, buttons, etc.
+// Reusable components for steps, fields, buttons, etc. (WC)
 function Step({ step, title, done, locked = false, children }: {
   step: number; title: string; done: boolean; locked?: boolean; children: React.ReactNode
 }) {
@@ -519,7 +529,7 @@ function Step({ step, title, done, locked = false, children }: {
     </div>
   )
 }
-// In a real application, we would likely want to create more reusable components for form fields, buttons, badges, etc. to keep the code DRY and maintainable, but for simplicity we will define them inline here.
+// In a real application, we would likely want to create more reusable components for form fields, buttons, badges, etc. to keep the code DRY and maintainable, but for simplicity we will define them inline here. (WC)
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
@@ -529,7 +539,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   )
 }
 
-// A simple select component that can be reused for pet type and emergency category selection. In a real application, we might want to create more customizable form components like this.
+// A simple select component that can be reused for pet type and emergency category selection. In a real application, we might want to create more customizable form components like this. (WC)
 function Select({ value, onChange, disabled, options }: {
   value: string; onChange: (v: string) => void; disabled?: boolean; options: string[]
 }) {
@@ -542,7 +552,7 @@ function Select({ value, onChange, disabled, options }: {
   )
 }
 
-// A reusable button component that can be used for various actions like creating content, saving, requesting validation, etc. It accepts props for styling, click handler, and disabled state.
+// A reusable button component that can be used for various actions like creating content, saving, requesting validation, etc. It accepts props for styling, click handler, and disabled state. (WC)
 function Btn({ children, className = '', onClick, disabled }: {
   children: React.ReactNode; className?: string; onClick?: () => void; disabled?: boolean
 }) {
@@ -554,7 +564,7 @@ function Btn({ children, className = '', onClick, disabled }: {
   )
 }
 
-// A badge component to indicate saved content with a checkmark. It can be reused for showing the status of saved guides, videos, quizzes, etc.
+// A badge component to indicate saved content with a checkmark. It can be reused for showing the status of saved guides, videos, quizzes, etc. (WC)
 function SavedBadge({ children }: { children: React.ReactNode }) {
   return (
     <div className="mt-4 bg-green-50 border border-green-200 rounded-lg px-4 py-2.5 text-sm text-green-800">

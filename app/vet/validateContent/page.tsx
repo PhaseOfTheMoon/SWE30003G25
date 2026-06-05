@@ -44,7 +44,8 @@ export default function ValidateContentPage() {
     }
   }
 
-  // The filtered variable holds the list of content reviews that match the currently selected tab (pending, validated, or rejected). This allows the UI to display only the relevant reviews based on their status when a veterinarian clicks on the corresponding tab.
+  // The filtered variable holds the list of content reviews that match the currently selected tab (pending, validated, or rejected). 
+  // This allows the UI to display only the relevant reviews based on their status when a veterinarian clicks on the corresponding tab. (WC)
   const filtered = reviews.filter(r => r.status === tab)
 
   async function handleValidateContent() {
@@ -63,7 +64,7 @@ export default function ValidateContentPage() {
   }
 
   // The handleRejectContent function is called when a veterinarian chooses to reject a piece of content under review. 
-  // It requires the veterinarian to provide a comment explaining the reason for rejection. The function then updates the content's status to "rejected" in the backend and provides feedback to the user about the action taken.
+  // It requires the veterinarian to provide a comment explaining the reason for rejection. The function then updates the content's status to "rejected" in the backend and provides feedback to the user about the action taken. (WC)
   async function handleRejectContent() {
     if (!selected || !comment.trim()) return
     setSubmitting(true)
@@ -80,11 +81,11 @@ export default function ValidateContentPage() {
   }
 
   // The updateReviewInList function is a helper function that updates the state of the content reviews list after a review has been validated or rejected. 
-  // It merges the updated review data returned from the API with the existing review in the state to ensure that any nested content details (like quiz questions or guide steps) are preserved while only the changed fields (status, comment, reviewedDate) are updated.
+  // It merges the updated review data returned from the API with the existing review in the state to ensure that any nested content details (like quiz questions or guide steps) are preserved while only the changed fields (status, comment, reviewedDate) are updated. (WC)
   function updateReviewInList(updated: ContentReview) {
     // The API returns a plain row without nested first_aid_content (quiz/video/guide).
     // Merge only the changed scalar fields into the existing record so the nested
-    // content already in state is preserved.
+    // content already in state is preserved. (WC)
     const merge = (existing: ContentReview): ContentReview => ({
       ...existing,
       status: updated.status,

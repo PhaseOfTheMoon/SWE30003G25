@@ -1,7 +1,7 @@
 import supabase from '@/lib/supabase'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
+// This file defines the core data types and API functions for managing first-aid content in the application. It includes types for the main content record (FirstAidContent), associated guides, educational videos, quizzes, and content reviews. 
+// The file also contains functions for staff to create and manage content, for veterinarians to review and validate content, and for pet owners/guests to view published content. This serves as the central interface between the frontend components and the backend database for all content-related operations. (WC)
 export type FirstAidContent = {
   contentID: string
   petType: string
@@ -10,7 +10,7 @@ export type FirstAidContent = {
   staffID: string
 }
 
-// Guide — maps to the Guide table in the UML (guideID, title, stepNumber, instruction, videoUrl)
+// Guide: maps to the Guide table in the UML (guideID, title, stepNumber, instruction, videoUrl) (WC)
 export type Guide = {
   guideID: string
   contentID: string
@@ -20,7 +20,7 @@ export type Guide = {
   videoUrl?:  string | null
 }
 
-// EducationalVideo — maps to Video table in the UML (videoID, title, videoURL, duration)
+// EducationalVideo: maps to Video table in the UML (videoID, title, videoURL, duration) (WC)
 export type EducationalVideo = {
   videoID: string
   contentID: string
@@ -30,14 +30,14 @@ export type EducationalVideo = {
   description?:string | null
 }
 
-// QuizQuestion — stored in quiz_question table
+// QuizQuestion: stored in quiz_question table (WC)
 export type QuizQuestion = {
   question: string
   options: string[]
-  answer: string       // text of the correct option
+  answer: string      
 }
 
-// Quiz — maps to Quiz table in the UML (quizID, questionBank, question, totalMark, score)
+// Quiz: maps to Quiz table in the UML (quizID, questionBank, question, totalMark, score) (WC)
 export type Quiz = {
   quizID: string
   contentID: string
@@ -45,7 +45,7 @@ export type Quiz = {
   questions: QuizQuestion[]
 }
 
-// ContentReview — maps to ContentReview in the UML (reviewID, contentID, VetID, status, comment, reviewedDate)
+// ContentReview: maps to ContentReview in the UML (reviewID, contentID, VetID, status, comment, reviewedDate) (WC)
 export type ContentReview = {
   reviewID: string
   contentID: string
@@ -72,9 +72,8 @@ export type FirstAidContentBundle = FirstAidContent & {
   content_review?: Pick<ContentReview, 'status'>[]
 }
 
-// ─── Shared UI constants ──────────────────────────────────────────────────────
+// Shared UI constants (WC) 
 // Defined here (on FirstAidContent) per the UML — imported by guide, quiz, and video pages.
-
 export const PET_EMOJI: Record<string, string> = {
   Dog: '🐕', Cat: '🐈', Bird: '🐦', Rabbit: '🐇', Other: '🐾',
 }
@@ -84,9 +83,8 @@ export const CATEGORY_EMOJI: Record<string, string> = {
   Poisoning: '☠️', Seizure: '⚡', Heatstroke: '🌡️', Unconscious: '💤',
 }
 
-// ─── FirstAidContent ──────────────────────────────────────────────────────────
-
-// Staff: create a first-aid content record (parent record for guide/video/quiz)
+//  FirstAidContent 
+// Staff: create a first-aid content record (parent record for guide/video/quiz) (WC)
 export async function createFirstAidContent(payload: {
   staffID: string
   petType: string
@@ -106,7 +104,7 @@ export async function createFirstAidContent(payload: {
   return data
 }
 
-// Guest / PetOwner: get all pet types with published content
+// Guest / PetOwner: get all pet types with published content (WC)
 export async function getPetTypes(): Promise<string[]> {
   const { data, error } = await supabase
     .from('content_review')
@@ -118,7 +116,7 @@ export async function getPetTypes(): Promise<string[]> {
   )]
 }
 
-// Guest / PetOwner: get emergency categories for a given pet type (published only)
+// Guest / PetOwner: get emergency categories for a given pet type (published only) (WC)
 export async function getEmergencyCategories(petType: string): Promise<string[]> {
   const { data, error } = await supabase
     .from('content_review')
@@ -133,10 +131,10 @@ export async function getEmergencyCategories(petType: string): Promise<string[]>
   )]
 }
 
-// Guest / PetOwner: full validated content bundle — pet-type browse UI
+// Guest / PetOwner: full validated content bundle — pet-type browse UI (WC)
 export async function viewPublishedFirstAidContent(): Promise<FirstAidContentBundle[]> {
   // Query from content_review with status filter to correctly get only validated rows.
-  // Using content_review as the root avoids the PostgREST !inner join filter limitation.
+  // Using content_review as the root avoids the PostgREST !inner join filter limitation. (WC)
   const { data, error } = await supabase
     .from('content_review')
     .select('first_aid_content(*, guide(*), educational_video(*))')
@@ -158,9 +156,8 @@ export async function viewPublishedFirstAidContent(): Promise<FirstAidContentBun
   return rows
 }
 
-// ─── Guide ────────────────────────────────────────────────────────────────────
-
-// Staff: create a single guide step under a content record
+// Guide 
+// Staff: create a single guide step under a content record (WC)
 export async function createGuide(payload: {
   contentID: string
   title: string
@@ -177,7 +174,7 @@ export async function createGuide(payload: {
   return data
 }
 
-// Staff: update a guide step
+// Staff: update a guide step (WC)
 export async function updateGuide(
   guideID: string,
   title: string,
@@ -193,8 +190,8 @@ export async function updateGuide(
   if (error) throw new Error(error.message)
   return data
 }
-
-// Staff: delete a guide step
+ 
+// Staff: delete a guide step (WC)
 export async function deleteGuide(guideID: string): Promise<void> {
   const { error } = await supabase
     .from('guide')
@@ -203,7 +200,7 @@ export async function deleteGuide(guideID: string): Promise<void> {
   if (error) throw new Error(error.message)
 }
 
-// PetOwner / Guest: view all steps for a given content record — UML: Guide.viewSteps()
+// PetOwner / Guest: view all steps for a given content record (WC)
 export async function viewSteps(contentID: string): Promise<Guide[]> {
   const { data, error } = await supabase
     .from('guide')
@@ -214,9 +211,8 @@ export async function viewSteps(contentID: string): Promise<Guide[]> {
   return data ?? []
 }
 
-// ─── EducationalVideo ─────────────────────────────────────────────────────────
-
-// Staff: create an educational video under a content record
+// EducationalVideo 
+// Staff: create an educational video under a content record (WC)
 export async function createEducationalVideo(payload: {
   contentID: string
   title: string
@@ -233,7 +229,7 @@ export async function createEducationalVideo(payload: {
   return data
 }
 
-// Staff: update an educational video
+// Staff: update an educational video (WC)
 export async function updateEducationalVideo(
   videoID: string,
   title: string,
@@ -250,7 +246,7 @@ export async function updateEducationalVideo(
   return data
 }
 
-// Staff: delete a video
+// Staff: delete a video (WC)
 export async function deleteVideo(videoID: string): Promise<void> {
   const { error } = await supabase
     .from('educational_video')
@@ -259,9 +255,8 @@ export async function deleteVideo(videoID: string): Promise<void> {
   if (error) throw new Error(error.message)
 }
 
-// ─── Quiz ─────────────────────────────────────────────────────────────────────
-
-// Staff: create a quiz under a content record
+//  Quiz  
+// Staff: create a quiz under a content record (WC)
 export async function createQuiz(payload: {
   contentID: string
   title: string
@@ -280,7 +275,7 @@ export async function createQuiz(payload: {
     .single()
   if (error) throw new Error(error.message)
 
-  // Also insert each question into quiz_question table
+  // Also insert each question into quiz_question table (WC)
   const questionRows = payload.questions.map((q) => ({
     petType: payload.petType,
     emergencyCategory: payload.emergencyCategory,
@@ -294,7 +289,7 @@ export async function createQuiz(payload: {
   return data
 }
 
-// Staff: update a quiz title and questions
+// Staff: update a quiz title and questions (WC)
 export async function updateQuiz(
   quizID: string,
   title: string,
@@ -310,7 +305,7 @@ export async function updateQuiz(
     .single()
   if (error) throw new Error(error.message)
 
-  // Replace quiz_question rows for this pet/category
+  // Replace quiz_question rows for this pet/category (WC)
   await supabase
     .from('quiz_question')
     .delete()
@@ -330,13 +325,13 @@ export async function updateQuiz(
   return data
 }
 
-// PetOwner: submit answers and calculate score — UML: Quiz.submitQuiz()
+// PetOwner: submit answers and calculate score (WC)
 // answers: array of selected option texts, one per question
 export async function submitQuiz(
   quizID: string,
   answers: string[],
 ): Promise<Quiz> {
-  // Fetch the quiz to grade locally
+  // Fetch the quiz to grade locally (WC)
   const { data: quiz, error: fetchErr } = await supabase
     .from('quiz')
     .select('*')
@@ -359,7 +354,7 @@ export async function submitQuiz(
   return data
 }
 
-// PetOwner: retrieve latest score for a quiz — UML: Quiz.getScore()
+// PetOwner: retrieve latest score for a quiz (WC)
 export async function getScore(quizID: string): Promise<number | null> {
   const { data, error } = await supabase
     .from('quiz')
@@ -370,8 +365,7 @@ export async function getScore(quizID: string): Promise<number | null> {
   return data?.score ?? null
 }
 
-// ─── ContentReview ────────────────────────────────────────────────────────────
-
+// ContentReview (WC) 
 // Staff: request vet validation for a content record
 export async function requestVetValidation(
   contentID: string,
@@ -386,7 +380,7 @@ export async function requestVetValidation(
   return data
 }
 
-// Staff / Vet: view the latest review record for a content record
+// Staff / Vet: view the latest review record for a content record (WC)
 export async function viewContentReview(contentID: string): Promise<ContentReview | null> {
   const { data, error } = await supabase
     .from('content_review')
@@ -398,8 +392,7 @@ export async function viewContentReview(contentID: string): Promise<ContentRevie
   return data
 }
 
-// ─── Vet Actions ──────────────────────────────────────────────────────────────
-
+// Vet Actions (WC) 
 // Vet: view all pending content reviews assigned to them
 export async function viewAllVetContent(vetID: string): Promise<ContentReview[]> {
   const { data, error } = await supabase
@@ -421,7 +414,7 @@ export async function viewAllVetContent(vetID: string): Promise<ContentReview[]>
   return data ?? []
 }
 
-// Vet: approve a content review — sets status to 'validated' so staff can publish it
+// Vet: approve a content review — sets status to 'validated' so staff can publish it (WC)
 export async function validateContent(
   reviewID: string,
   comment?: string,
@@ -440,7 +433,7 @@ export async function validateContent(
   return data
 }
 
-// Staff: publish a validated content record — makes it publicly visible
+// Staff: publish a validated content record — makes it publicly visible (WC)
 export async function publishContent(
   reviewID: string,
 ): Promise<ContentReview> {
@@ -457,7 +450,7 @@ export async function publishContent(
   return data
 }
 
-// Vet: reject a content review
+// Vet: reject a content review (WC)
 export async function rejectContent(
   reviewID: string,
   comment?: string,
@@ -476,9 +469,9 @@ export async function rejectContent(
   return data
 }
 
-// Staff: view all content submitted by this staff member
+// Staff: view all content submitted by this staff member (WC)
 // Queries first_aid_content directly so content with no review row still appears.
-// Returns one entry per content record, with the latest review attached if it exists.
+// Returns one entry per content record, with the latest review attached if it exists. 
 export async function viewStaffContent(staffID: string): Promise<any[]> {
   const { data, error } = await supabase
     .from('first_aid_content')
@@ -499,7 +492,7 @@ export async function viewStaffContent(staffID: string): Promise<any[]> {
     .order('lastUpdateDate', { ascending: false })
   if (error) throw new Error(error.message)
 
-  // For each content record, pick the latest review and flatten onto the object
+  // For each content record, pick the latest review and flatten onto the object (WC)
   return (data ?? []).map((row: any) => {
     const reviews: any[] = row.content_review ?? []
     // Sort reviews by reviewedDate desc, nulls last — pick the most recent
@@ -509,8 +502,8 @@ export async function viewStaffContent(staffID: string): Promise<any[]> {
       return new Date(b.reviewedDate).getTime() - new Date(a.reviewedDate).getTime()
     })[0] ?? null
 
-    return {
-      // Spread the review fields at top level so page can read review.status etc.
+    return { 
+      // Spread the review fields at top level so page can read review.status etc.(WC)
       reviewID: latestReview?.reviewID ?? null,
       vetID: latestReview?.vetID ?? null,
       status: latestReview?.status ?? 'draft',
@@ -526,7 +519,7 @@ export async function viewStaffContent(staffID: string): Promise<any[]> {
   })
 }
 
-// Staff: edit guide steps on a validated content record, then send back for vet re-validation
+// Staff: edit guide steps on a validated content record, then send back for vet re-validation (WC)
 export async function editGuideAndResubmit(
   reviewID: string,
   stepEdits: Array<{ guideID: string; title: string; instruction: string; videoUrl?: string }>,
@@ -549,7 +542,7 @@ export async function editGuideAndResubmit(
   return data
 }
 
-// Staff: delete a full content bundle (guide/video/quiz + review + parent record)
+// Staff: delete a full content bundle (guide/video/quiz + review + parent record) (WC)
 export async function deleteFullContent(contentID: string): Promise<void> {
   await supabase.from('guide').delete().eq('contentID', contentID)
   await supabase.from('educational_video').delete().eq('contentID', contentID)
@@ -559,8 +552,8 @@ export async function deleteFullContent(contentID: string): Promise<void> {
   if (error) throw new Error(error.message)
 }
 
-// Staff: resubmit a rejected content record for re-validation by inserting a new pending review
-// Takes the reviewID of the rejected review to find the contentID and vetID, then creates a new pending review
+// Staff: resubmit a rejected content record for re-validation by inserting a new pending review (WC)
+// Takes the reviewID of the rejected review to find the contentID and vetID, then creates a new pending review 
 export async function resubmitContent(
   reviewID: string,
 ): Promise<ContentReview> {
@@ -572,7 +565,7 @@ export async function resubmitContent(
     .single()
   if (fetchErr) throw new Error(fetchErr.message)
 
-  // Insert a new pending review for the same content + vet
+  // Insert a new pending review for the same content + vet (WC)
   const { data, error } = await supabase
     .from('content_review')
     .insert({ contentID: original.contentID, vetID: original.vetID, status: 'pending' })
