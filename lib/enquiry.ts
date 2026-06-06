@@ -1,6 +1,6 @@
 import supabase from '@/lib/supabase'
 
-// This file contains all content-related types and functions for both staff and vets, such as creating/updating first-aid guides, educational videos, quizzes, and handling vet reviews.
+// This file contains all content-related types and functions for both staff and vets, such as creating/updating first-aid guides, educational videos, quizzes, and handling vet reviews. (WC)
 export type Enquiry = {
   enquiryID: string
   subject: string
@@ -9,10 +9,10 @@ export type Enquiry = {
   response: string | null
   petOwnerID: string
   vetID: string | null
-  created_at:  string
+  created_at: string
 }
 
-// pet owner submits an enquiry about a pet emergency
+// pet owner submits an enquiry about a pet emergency (WC)
 export async function submitEnquiry(payload: {
   subject: string
   message: string
@@ -33,7 +33,7 @@ export async function submitEnquiry(payload: {
   return data
 }
 
-//  Staff view all enquiries in the system, sorted by most recent
+//  Staff view all enquiries in the system, sorted by most recent (WC)
 export async function viewEnquiry(): Promise<Enquiry[]> {
   const { data, error } = await supabase
     .from('enquiry')
@@ -43,11 +43,11 @@ export async function viewEnquiry(): Promise<Enquiry[]> {
   if (error) throw new Error(error.message)
   return data ?? []
 }
-
-// Staff assigns an enquiry to a vet, changing status to 'assigned'
+ 
+// Staff assigns an enquiry to a vet, changing status to 'assigned' (WC)
 export async function assignEnquiryToVet(
   enquiryID: string,
-  vetID:      string
+  vetID: string
 ): Promise<Enquiry> {
   const { data, error } = await supabase
     .from('enquiry')
@@ -60,7 +60,7 @@ export async function assignEnquiryToVet(
   return data
 }
 
-// Vet views all enquiries assigned to them with status 'assigned'
+// Vet views all enquiries assigned to them with status 'assigned' (WC)
 export async function viewAssignedEnquiry(vetID: string): Promise<Enquiry[]> {
   const { data, error } = await supabase
     .from('enquiry')
@@ -73,7 +73,7 @@ export async function viewAssignedEnquiry(vetID: string): Promise<Enquiry[]> {
   return data ?? []
 }
 
-// Vet responds to an assigned enquiry, changing status to 'responded' and saving their reply
+// Vet responds to an assigned enquiry, changing status to 'responded' and saving their reply (WC)
 export async function respondAssignedEnquiry(
   enquiryID: string,
   response:  string
@@ -89,7 +89,7 @@ export async function respondAssignedEnquiry(
   return data
 }
 
-// Staff responds to an enquiry that has not been assigned to a vet, changing status to 'responded' and saving their reply
+// Staff responds to an enquiry that has not been assigned to a vet, changing status to 'responded' and saving their reply (WC)
 export async function respondToEnquiry(
   enquiryID: string,
   response:  string

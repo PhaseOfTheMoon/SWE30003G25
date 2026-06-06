@@ -16,15 +16,16 @@ export default function Footer() {
           <ul style={{ listStyle: "none", padding: 0, fontSize: "13px" }}>
             <li style={{ marginBottom: "8px" }}><Link href="/" style={{ color: "#9ca3af", textDecoration: "none" }}>Home</Link></li>
             <li style={{ marginBottom: "8px" }}><Link href="/about" style={{ color: "#9ca3af", textDecoration: "none" }}>About Us</Link></li>
-            <li style={{ marginBottom: "8px" }}><Link href="/content" style={{ color: "#9ca3af", textDecoration: "none" }}>First Aid Content</Link></li>
+            <li style={{ marginBottom: "8px" }}><Link href="/guide" style={{ color: "#9ca3af", textDecoration: "none" }}>First Aid Guide</Link></li>
             <li style={{ marginBottom: "8px" }}><Link href="/contact" style={{ color: "#9ca3af", textDecoration: "none" }}>Contact Us</Link></li>
           </ul>
         </div>
         <div>
           <h4 style={{ color: "white", fontWeight: "600", marginBottom: "12px" }}>Services</h4>
           <ul style={{ listStyle: "none", padding: 0, fontSize: "13px" }}>
-            <li style={{ marginBottom: "8px" }}><Link href="/content" style={{ color: "#9ca3af", textDecoration: "none" }}>First Aid Content</Link></li>
-            <li style={{ marginBottom: "8px" }}><Link href="/quiz" style={{ color: "#9ca3af", textDecoration: "none" }}>First Aid Quiz</Link></li>
+            <li style={{ marginBottom: "8px" }}><Link href="/FirstAidContent/guide" style={{ color: "#9ca3af", textDecoration: "none" }}>First Aid Guide</Link></li>
+            <li style={{ marginBottom: "8px" }}><Link href="/FirstAidContent/video" style={{ color: "#9ca3af", textDecoration: "none" }}>Educational Videos</Link></li>
+            <li style={{ marginBottom: "8px" }}><Link href="/FirstAidContent/quiz" style={{ color: "#9ca3af", textDecoration: "none" }}>First Aid Quiz</Link></li>
             <li style={{ marginBottom: "8px" }}><Link href="/emergency" style={{ color: "#9ca3af", textDecoration: "none" }}>Emergency Contact</Link></li>
           </ul>
         </div>
@@ -32,7 +33,15 @@ export default function Footer() {
           <h4 style={{ color: "white", fontWeight: "600", marginBottom: "12px" }}>Contact</h4>
           <ul style={{ listStyle: "none", padding: 0, fontSize: "13px" }}>
             <li style={{ marginBottom: "8px" }}>📧 info@petfirstaid.com</li>
-            <li style={{ marginBottom: "8px" }}>📞 +60 12-345 6789</li>
+
+            <li style={{ marginBottom: "6px" }}><b>24Hr Pet Emergency Hotline</b></li>
+            <li style={{ marginBottom: "8px" }}>📞 +60 3-7803 9494</li>
+
+            <li style={{ marginBottom: "6px" }}><b>Veterinary Association Helpline</b></li>
+            <li style={{ marginBottom: "8px" }}>📞 +60 3-8888 2222</li>
+
+            <li style={{ marginBottom: "6px" }}><b>Animal Poison Control</b></li>
+            <li style={{ marginBottom: "8px" }}>📞 +60 3-6666 5555</li>
             <li style={{ marginBottom: "8px" }}>🕐 Mon to Fri, 8am to 5pm</li>
           </ul>
         </div>
@@ -43,9 +52,6 @@ export default function Footer() {
           <p style={{ fontSize: "13px", lineHeight: "1.6", marginBottom: "12px" }}>
             Cannot find what you need? Send us an enquiry and our team will help you.
           </p>
-          <Link href="/enquiry" style={{ padding: "8px 16px", backgroundColor: "#dc2626", color: "white", borderRadius: "4px", textDecoration: "none", fontSize: "13px", fontWeight: "600" }}>
-            Submit Enquiry
-          </Link>
         </div>
       </div>
       <div style={{ textAlign: "center", fontSize: "12px", color: "#6b7280", marginTop: "32px" }}>

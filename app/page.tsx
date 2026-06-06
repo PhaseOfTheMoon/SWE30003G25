@@ -5,43 +5,48 @@ import Link from "next/link";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 
-// Background images for the hero slideshow
 const heroSlides = [
   "/images/dog.jpg",
   "/images/cat.jpg",
   "/images/hamster.jpg",
 ];
 
-// Services offered by the web application
+// The services array defines the different services offered by the application, such as the first-aid guide, educational videos, quizzes, emergency service, and enquiry submission. 
+// Each service has an icon, title, description, and a link to the corresponding page where users can access that service. This array is used to dynamically render the services section on the homepage. (WC)
 const services = [
   {
     icon: "📖",
-    title: "First Aid Content",
-    desc: "Choose a pet type, open an emergency guide, and watch the attached educational video when available.",
+    title: "First-Aid Guide",
+    desc: "Step by step instructions for common pet emergencies like choking, bleeding, and seizures.",
+    href: "/FirstAidContent/guide",
+  },
+  {
+    icon: "🎬",
+    title: "Educational Videos",
+    desc: "Short videos that teach you how to handle pet emergencies in the right way.",
+    href: "/FirstAidContent/video",
   },
   {
     icon: "📝",
     title: "First-Aid Quiz",
     desc: "Test your knowledge with quizzes so you are prepared when your pet needs help.",
+    href: "/FirstAidContent/quiz",
   },
   {
     icon: "🚨",
-    title: "Emergency Contact",
+    title: "Emergency Service",
     desc: "Find 24 hour emergency hotlines and nearby veterinary clinics based on your location.",
+    href: "/emergency",
   },
   {
     icon: "💬",
     title: "Submit Enquiry",
     desc: "Send a question to our staff and get help from a qualified veterinarian.",
-  },
-  {
-    icon: "🐾",
-    title: "Pet Categories",
-    desc: "Get first aid content for dogs, cats, and small pets like rabbits and hamsters.",
+    href: "/enquiry",
   },
 ];
 
-// Reasons why users should use this application
+// The reasons array defines the key reasons why users should choose this application for their pet first-aid needs. Each reason has an icon, title, and description. This array is used to dynamically render the benefits section on the homepage. (WC)
 const reasons = [
   {
     icon: "✅",
@@ -65,11 +70,11 @@ const reasons = [
   },
 ];
 
+// The HomePage component is the main landing page of the application. It features a hero section with a rotating background image and a call-to-action, an about section that explains the purpose of the app, a services section that highlights the key features, a reasons section that emphasizes the benefits of using the app, and a final call-to-action banner encouraging users to register. 
+// The component uses React state and effects to manage the hero image rotation and renders content dynamically based on predefined arrays for services and reasons. (WC)
 export default function HomePage() {
-  // Track which slide is currently showing
   const [current, setCurrent] = useState(0);
 
-  // Auto change slide every 5 seconds
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrent((prev) => (prev + 1) % heroSlides.length);
@@ -81,7 +86,7 @@ export default function HomePage() {
     <main>
       <Navbar />
 
-      {/* Hero section with crossfade background images */}
+      {/* Hero section */}
       <section style={{ position: "relative", height: "560px", overflow: "hidden" }}>
         {heroSlides.map((slide, index) => (
           <div
@@ -98,7 +103,6 @@ export default function HomePage() {
           />
         ))}
 
-        {/* Dark overlay so the text is readable */}
         <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.55)", display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", color: "white", padding: "16px" }}>
           <div>
             <p style={{ fontSize: "13px", textTransform: "uppercase", letterSpacing: "3px", color: "#fca5a5", marginBottom: "10px" }}>
@@ -112,14 +116,13 @@ export default function HomePage() {
               <Link href="/register" style={{ padding: "12px 24px", backgroundColor: "#dc2626", color: "white", borderRadius: "4px", textDecoration: "none", fontWeight: "bold" }}>
                 Get Started
               </Link>
-              <Link href="/content" style={{ padding: "12px 24px", border: "2px solid white", color: "white", borderRadius: "4px", textDecoration: "none", fontWeight: "bold" }}>
-                First Aid Content
+              <Link href="/FirstAidContent/guide" style={{ padding: "12px 24px", border: "2px solid white", color: "white", borderRadius: "4px", textDecoration: "none", fontWeight: "bold" }}>
+                First Aid Guide
               </Link>
             </div>
           </div>
         </div>
 
-        {/* Dot indicators to show which slide is active */}
         <div style={{ position: "absolute", bottom: "20px", left: "50%", transform: "translateX(-50%)", display: "flex", gap: "8px" }}>
           {heroSlides.map((_, i) => (
             <button
@@ -157,12 +160,9 @@ export default function HomePage() {
               <li style={{ marginBottom: "8px", color: "#374151" }}>✔ Available for dogs, cats and small pets</li>
               <li style={{ marginBottom: "8px", color: "#374151" }}>✔ 24/7 emergency contact support</li>
             </ul>
-            <Link href="/about" style={{ padding: "10px 24px", backgroundColor: "#dc2626", color: "white", borderRadius: "4px", textDecoration: "none", fontWeight: "bold" }}>
-              Learn More
-            </Link>
+  
           </div>
 
-          {/* Two pet images side by side */}
           <div style={{ flex: 1, minWidth: "280px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
             <img src="/images/dog.jpg" alt="Dog" style={{ borderRadius: "8px", objectFit: "cover", height: "200px", width: "100%" }} />
             <img src="/images/cat.jpg" alt="Cat" style={{ borderRadius: "8px", objectFit: "cover", height: "200px", width: "100%" }} />
@@ -170,7 +170,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Services section */}
+      {/* Services section — cards are now clickable */}
       <section style={{ padding: "64px 16px", backgroundColor: "#f9fafb" }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto", textAlign: "center" }}>
           <p style={{ color: "#dc2626", fontWeight: "600", textTransform: "uppercase", fontSize: "13px", marginBottom: "8px" }}>Our Services</p>
@@ -178,14 +178,35 @@ export default function HomePage() {
             What We <span style={{ color: "#dc2626" }}>Offer</span>
           </h2>
 
-          {/* Service cards */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px" }}>
             {services.map((s, i) => (
-              <div key={i} style={{ backgroundColor: "white", borderRadius: "8px", padding: "24px", textAlign: "left", boxShadow: "0 1px 3px rgba(0,0,0,0.1)", border: "1px solid #f3f4f6" }}>
-                <div style={{ fontSize: "36px", marginBottom: "12px" }}>{s.icon}</div>
-                <h3 style={{ fontSize: "17px", fontWeight: "bold", marginBottom: "8px" }}>{s.title}</h3>
-                <p style={{ color: "#6b7280", fontSize: "14px", lineHeight: "1.6" }}>{s.desc}</p>
-              </div>
+              <Link key={i} href={s.href} style={{ textDecoration: "none" }}>
+                <div
+                  style={{
+                    backgroundColor: "white",
+                    borderRadius: "8px",
+                    padding: "24px",
+                    textAlign: "left",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                    border: "1px solid #f3f4f6",
+                    cursor: "pointer",
+                    transition: "box-shadow 0.2s, border-color 0.2s",
+                  }}
+                  onMouseEnter={e => {
+                    (e.currentTarget as HTMLDivElement).style.boxShadow = "0 4px 12px rgba(220,38,38,0.15)";
+                    (e.currentTarget as HTMLDivElement).style.borderColor = "#fca5a5";
+                  }}
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLDivElement).style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+                    (e.currentTarget as HTMLDivElement).style.borderColor = "#f3f4f6";
+                  }}
+                >
+                  <div style={{ fontSize: "36px", marginBottom: "12px" }}>{s.icon}</div>
+                  <h3 style={{ fontSize: "17px", fontWeight: "bold", marginBottom: "8px", color: "#111827" }}>{s.title}</h3>
+                  <p style={{ color: "#6b7280", fontSize: "14px", lineHeight: "1.6" }}>{s.desc}</p>
+                  <p style={{ color: "#dc2626", fontSize: "13px", fontWeight: "600", marginTop: "12px" }}>Explore →</p>
+                </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -217,7 +238,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Call to action banner */}
+      {/* CTA banner */}
       <section style={{ padding: "56px 16px", backgroundColor: "#dc2626", textAlign: "center", color: "white" }}>
         <h2 style={{ fontSize: "30px", fontWeight: "bold", marginBottom: "12px" }}>Ready to Get Started?</h2>
         <p style={{ marginBottom: "24px", color: "#fecaca" }}>

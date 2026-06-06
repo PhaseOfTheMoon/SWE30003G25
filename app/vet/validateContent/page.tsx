@@ -1,8 +1,8 @@
 'use client'
 
-import { Suspense, useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import DashboardLayout from '@/components/dashboardLayout'
+import DashboardLayout from '@/app/components/dashboardLayout'
 import {
   viewAllVetContent,
   validateContent,
@@ -12,23 +12,7 @@ import {
 import supabase from '@/lib/supabase'
 import { VET_NAV } from '@/app/components/sidebar'
 
-export default function ValidateContentPage() {
-  return (
-    <Suspense fallback={<ValidateContentFallback />}>
-      <ValidateContentView />
-    </Suspense>
-  )
-}
-
-function ValidateContentFallback() {
-  return (
-    <DashboardLayout role="Veterinarian" name="Veterinarian" navItems={VET_NAV}>
-      <p className="text-gray-500">Loading content validation...</p>
-    </DashboardLayout>
-  )
-}
-
-function ValidateContentView() {
+function ValidateContentInner() {
   const searchParams = useSearchParams()
   const initialTab = (searchParams.get('status') ?? 'pending') as 'pending' | 'validated' | 'rejected'
 
@@ -60,7 +44,8 @@ function ValidateContentView() {
     }
   }
 
-  // The filtered variable holds the list of content reviews that match the currently selected tab (pending, validated, or rejected). This allows the UI to display only the relevant reviews based on their status when a veterinarian clicks on the corresponding tab.
+  // The filtered variable holds the list of content reviews that match the currently selected tab (pending, validated, or rejected). 
+  // This allows the UI to display only the relevant reviews based on their status when a veterinarian clicks on the corresponding tab. (WC)
   const filtered = reviews.filter(r => r.status === tab)
 
   async function handleValidateContent() {
@@ -79,7 +64,7 @@ function ValidateContentView() {
   }
 
   // The handleRejectContent function is called when a veterinarian chooses to reject a piece of content under review. 
-  // It requires the veterinarian to provide a comment explaining the reason for rejection. The function then updates the content's status to "rejected" in the backend and provides feedback to the user about the action taken.
+  // It requires the veterinarian to provide a comment explaining the reason for rejection. The function then updates the content's status to "rejected" in the backend and provides feedback to the user about the action taken. (WC)
   async function handleRejectContent() {
     if (!selected || !comment.trim()) return
     setSubmitting(true)
@@ -96,11 +81,11 @@ function ValidateContentView() {
   }
 
   // The updateReviewInList function is a helper function that updates the state of the content reviews list after a review has been validated or rejected. 
-  // It merges the updated review data returned from the API with the existing review in the state to ensure that any nested content details (like quiz questions or guide steps) are preserved while only the changed fields (status, comment, reviewedDate) are updated.
+  // It merges the updated review data returned from the API with the existing review in the state to ensure that any nested content details (like quiz questions or guide steps) are preserved while only the changed fields (status, comment, reviewedDate) are updated. (WC)
   function updateReviewInList(updated: ContentReview) {
     // The API returns a plain row without nested first_aid_content (quiz/video/guide).
     // Merge only the changed scalar fields into the existing record so the nested
-    // content already in state is preserved.
+    // content already in state is preserved. (WC)
     const merge = (existing: ContentReview): ContentReview => ({
       ...existing,
       status: updated.status,
@@ -120,7 +105,7 @@ function ValidateContentView() {
   }
 
   return (
-    <DashboardLayout role="Veterinarian" name="Veterinarian" navItems={VET_NAV}>
+    <DashboardLayout role="Veterinarian" navItems={VET_NAV}>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Validate Content</h1>
 
       {/* Tabs */}
@@ -133,8 +118,8 @@ function ValidateContentView() {
             className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors
               ${tab === s
                 ? s === 'pending' ? 'bg-yellow-100 border-yellow-400 text-yellow-800'
-                : s === 'validated' ? 'bg-green-100  border-green-400  text-green-800'
-                : 'bg-red-100 border-red-400 text-red-800'
+                  : s === 'validated' ? 'bg-green-100  border-green-400  text-green-800'
+                    : 'bg-red-100 border-red-400 text-red-800'
                 : 'bg-white border-gray-200 text-gray-500 hover:border-gray-400'}`}
           >
             {s.charAt(0).toUpperCase() + s.slice(1)}
@@ -157,18 +142,18 @@ function ValidateContentView() {
             const content = (review as any).first_aid_content
             const guides = content?.guide ?? []
             const quizzes = content?.quiz ?? []
-            const videos  = content?.educational_video ?? []
+            const videos = content?.educational_video ?? []
 
             const typeBadges: { label: string; cls: string }[] = [
-              ...(guides.length  > 0 ? [{ label: 'Guide', cls: 'bg-blue-50 text-blue-700' }] : []),
-              ...(quizzes.length > 0 ? [{ label: 'Quiz',  cls: 'bg-purple-50 text-purple-700' }] : []),
-              ...(videos.length  > 0 ? [{ label: 'Video', cls: 'bg-orange-50 text-orange-700' }] : []),
+              ...(guides.length > 0 ? [{ label: 'Guide', cls: 'bg-blue-50 text-blue-700' }] : []),
+              ...(quizzes.length > 0 ? [{ label: 'Quiz', cls: 'bg-purple-50 text-purple-700' }] : []),
+              ...(videos.length > 0 ? [{ label: 'Video', cls: 'bg-orange-50 text-orange-700' }] : []),
             ]
 
             const subtitles = [
-              ...guides.map((g: any)  => g.title),
+              ...guides.map((g: any) => g.title),
               ...quizzes.map((q: any) => q.title),
-              ...videos.map((v: any)  => v.title),
+              ...videos.map((v: any) => v.title),
             ].filter(Boolean)
 
             return (
@@ -220,7 +205,7 @@ function ValidateContentView() {
               const content = (selected as any).first_aid_content
               const guides = content?.guide ?? []
               const quizzes = content?.quiz ?? []
-              const videos  = content?.educational_video ?? []
+              const videos = content?.educational_video ?? []
 
               return (
                 <>
@@ -398,5 +383,13 @@ function ValidateContentView() {
         )}
       </div>
     </DashboardLayout>
+  )
+}
+
+export default function ValidateContentPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-gray-500">Loading…</div>}>
+      <ValidateContentInner />
+    </Suspense>
   )
 }

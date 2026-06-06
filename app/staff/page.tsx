@@ -1,8 +1,10 @@
 "use client";
 
-import DashboardLayout from "@/components/dashboardLayout";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { STAFF_NAV } from '@/app/components/sidebar'
+import Navbar from "@/app/components/Navbar";
+import Footer from "@/app/components/Footer";
+import supabase from "@/lib/supabase";
 
 type StatCardProps = {
   icon: string;
@@ -13,8 +15,8 @@ type StatCardProps = {
   accent?: boolean;
 };
 
-// The StatCard component is a reusable UI element that displays a key statistic with an icon, label, value, and a link to view more details. 
-// The accent prop can be used to highlight important stats.
+// The StatCard component is a reusable UI element that displays a statistic with an icon, label, value, and a link to view more details. 
+// It accepts props for the icon, label, value, subtext, href for the link, and an optional accent flag to highlight important stats. The card has hover effects for better interactivity. (WC)
 function StatCard({ icon, label, value, sub, href, accent }: StatCardProps) {
   return (
     <Link
@@ -48,34 +50,96 @@ function StatCard({ icon, label, value, sub, href, accent }: StatCardProps) {
   );
 }
 
-// The StaffDashboardPage component is the main dashboard for staff users. It displays an overview of key metrics, quick action buttons, and a list of recent enquiries that need attention. 
-// The data is currently hardcoded for demonstration purposes, but in a real application, it would be fetched from the backend (e.g., Supabase) to show real-time stats and enquiries.
+// The StaffDashboardPage component is the main dashboard for staff users. It displays an overview of key statistics (pending enquiries, assigned enquiries, responded enquiries, pending reviews, published content) in stat cards, 
+// along with a welcome message and quick action buttons. It also shows a list of recent enquiries with their status and time. The component fetches data from the API on mount to populate the stats and recent enquiries. (WC)
+type RecentEnquiry = { subject: string; status: string; time: string };
+
+// We define the StaffDashboardPage component which will serve as the main dashboard for staff users. It will display key statistics about enquiries and content, a welcome message, quick action buttons, and a list of recent enquiries. (WC)
 export default function StaffDashboardPage() {
-  // Replace with real Supabase counts
-  const stats = {
-    pendingEnquiries: 5,
-    assignedEnquiries: 3,
-    respondedEnquiries: 12,
-    pendingReviews: 2,
-    publishedContent: 18,
-  };
+  const [staffName, setStaffName] = useState("Staff");
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    pendingEnquiries: 0,
+    assignedEnquiries: 0,
+    respondedEnquiries: 0,
+    pendingReviews: 0,
+    publishedContent: 0,
+  });
+  const [recentEnquiries, setRecentEnquiries] = useState<RecentEnquiry[]>([]);
 
-  //  Replace with real Supabase enquiries - this is just mock data to show how the recent enquiries section would look. Each enquiry has a subject, status, and time since it was submitted.
-  const recentEnquiries = [
-    { subject: "My dog is choking", status: "pending",   time: "10 mins ago" },
-    { subject: "Cat not eating", status: "assigned",  time: "1 hour ago"  },
-    { subject: "Rabbit leg injury", status: "responded", time: "3 hours ago" },
-  ];
+  useEffect(() => {
+    async function init() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-  // The statusColor and statusText objects define the background and text colors for the status badges shown next to each enquiry in the recent enquiries list. 
-  // This helps staff quickly identify which enquiries are pending, assigned, or responded to.
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("name")
+        .eq("id", user.id)
+        .single();
+      if (profile?.name) setStaffName(profile.name);
+
+      // Fetch all enquiries for stats
+      const { data: enquiries } = await supabase
+        .from("enquiry")
+        .select("enquiryID, subject, status, created_at")
+        .order("created_at", { ascending: false });
+
+      if (enquiries) {
+        setStats(prev => ({
+          ...prev,
+          pendingEnquiries: enquiries.filter(e => e.status === "pending").length,
+          assignedEnquiries: enquiries.filter(e => e.status === "assigned").length,
+          respondedEnquiries: enquiries.filter(e => e.status === "responded").length,
+        }));
+        setRecentEnquiries(
+          enquiries.slice(0, 3).map(e => ({
+            subject: e.subject,
+            status: e.status,
+            time: timeAgo(e.created_at),
+          }))
+        );
+      }
+
+      // Pending content reviews
+      const { data: reviews } = await supabase
+        .from("content_review")
+        .select("status");
+      if (reviews) {
+        setStats(prev => ({
+          ...prev,
+          pendingReviews: reviews.filter(r => r.status === "pending").length,
+        }));
+      }
+
+      // Published content
+      const { data: published } = await supabase
+        .from("content_review")
+        .select("contentID")
+        .eq("status", "published");
+      if (published) {
+        setStats(prev => ({ ...prev, publishedContent: published.length }));
+      }
+
+      setLoading(false);
+    }
+    init();
+  }, []);
+
+  // The timeAgo function takes an ISO date string and returns a human-readable string representing how long ago that time was from the current time. It calculates the difference in seconds and formats it as "just now", "X min ago", "X hr ago", or "Xd ago" depending on the duration. (WC)
+  function timeAgo(iso: string) {
+    const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+    if (s < 60) return "just now";
+    if (s < 3600) return `${Math.floor(s / 60)} min ago`;
+    if (s < 86400) return `${Math.floor(s / 3600)} hr ago`;
+    return `${Math.floor(s / 86400)}d ago`;
+  }
+
   const statusColor: Record<string, string> = {
     pending: "#fef3c7",
     assigned: "#dbeafe",
     responded: "#dcfce7",
   };
-  // The statusText object defines the text color for each status badge, ensuring good contrast and readability based on the background color defined in statusColor. 
-  // For example, pending enquiries have a light yellow background with a darker orange text, while responded enquiries have a light green background with a darker green text.
   const statusText: Record<string, string> = {
     pending: "#92400e",
     assigned: "#1e40af",
@@ -83,76 +147,75 @@ export default function StaffDashboardPage() {
   };
 
   return (
-    <DashboardLayout role="Staff" name="Alex Wong" navItems={STAFF_NAV}>
+    <main>
+      <Navbar />
 
-      {/* Page header */}
-      <div style={{ marginBottom: "28px" }}>
-        <h1 style={{ fontSize: "24px", fontWeight: "bold", color: "#111827", margin: "0 0 4px 0" }}>Dashboard</h1>
-        <p style={{ fontSize: "14px", color: "#9ca3af", margin: 0 }}>
-          Welcome back, Alex. Here's what needs your attention today.
-        </p>
-      </div>
+      <section style={{ minHeight: "80vh", backgroundColor: "#f9fafb", padding: "40px 16px" }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
 
-      {/* Stat cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginBottom: "32px" }}>
-        <StatCard icon="📨" label="Pending Enquiries" value={stats.pendingEnquiries} sub="Awaiting assignment or reply" href="/staff/manageEnquiry" accent />
-        <StatCard icon="🔗" label="Assigned to Vet" value={stats.assignedEnquiries} sub="Waiting on vet response" href="/staff/manageEnquiry" />
-        <StatCard icon="✅" label="Responded" value={stats.respondedEnquiries} sub="Enquiries closed" href="/staff/manageEnquiry" />
-        <StatCard icon="🕐" label="Pending Reviews" value={stats.pendingReviews} sub="Awaiting vet validation" href="/staff/pendingReview" accent />
-        <StatCard icon="📚" label="Published Content" value={stats.publishedContent} sub="Guides live for pet owners" href="/staff/manageContent" />
-      </div>
-
-      {/* Quick actions */}
-      <div style={{ marginBottom: "32px" }}>
-        <h2 style={{ fontSize: "16px", fontWeight: "bold", color: "#111827", marginBottom: "12px" }}>Quick Actions</h2>
-        <div style={{ display: "flex", gap: "12px" }}>
-          <Link
-            href="/staff/manageEnquiry"
-            style={{ padding: "10px 20px", backgroundColor: "#dc2626", color: "white", borderRadius: "4px", textDecoration: "none", fontSize: "14px", fontWeight: "600" }}
-          >
-            💬 View Enquiries
-          </Link>
-          <Link
-            href="/staff/manageContent"
-            style={{ padding: "10px 20px", backgroundColor: "white", border: "1px solid #e5e7eb", color: "#374151", borderRadius: "4px", textDecoration: "none", fontSize: "14px", fontWeight: "600" }}
-          >
-            📋 Create Guide
-          </Link>
-        </div>
-      </div>
-
-      {/* Recent enquiries */}
-      <div>
-        <h2 style={{ fontSize: "16px", fontWeight: "bold", color: "#111827", marginBottom: "12px" }}>Recent Enquiries</h2>
-        <div style={{ backgroundColor: "white", borderRadius: "8px", border: "1px solid #e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.08)", overflow: "hidden" }}>
-          {recentEnquiries.map((item, i) => (
-            <div
-              key={i}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "14px 20px",
-                borderBottom: i < recentEnquiries.length - 1 ? "1px solid #f3f4f6" : "none",
-              }}
-            >
-              <div>
-                <p style={{ fontSize: "14px", fontWeight: "600", color: "#111827", margin: "0 0 2px 0" }}>{item.subject}</p>
-                <p style={{ fontSize: "12px", color: "#9ca3af", margin: 0 }}>{item.time}</p>
-              </div>
-              <span style={{ fontSize: "12px", fontWeight: "500", padding: "3px 10px", borderRadius: "999px", backgroundColor: statusColor[item.status], color: statusText[item.status] }}>
-                {item.status}
-              </span>
-            </div>
-          ))}
-          <div style={{ padding: "10px 20px", borderTop: "1px solid #f3f4f6" }}>
-            <Link href="/staff/manageEnquiry" style={{ fontSize: "13px", color: "#dc2626", fontWeight: "600", textDecoration: "none" }}>
-              View all enquiries →
-            </Link>
+          {/* Page header */}
+          <div style={{ marginBottom: "28px" }}>
+            <h1 style={{ fontSize: "24px", fontWeight: "bold", color: "#111827", margin: "0 0 4px 0" }}>
+              Staff Dashboard
+            </h1>
+            <p style={{ fontSize: "14px", color: "#9ca3af", margin: 0 }}>
+              {loading ? "Loading…" : `Welcome back, ${staffName}. Here's what needs your attention today.`}
+            </p>
           </div>
-        </div>
-      </div>
 
-    </DashboardLayout>
+          {/* Stat cards */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginBottom: "32px" }}>
+            <StatCard icon="📨" label="Pending Enquiries" value={stats.pendingEnquiries} sub="Awaiting assignment or reply" href="/staff/manageEnquiry" accent />
+            <StatCard icon="🔗" label="Assigned to Vet" value={stats.assignedEnquiries} sub="Waiting on vet response" href="/staff/manageEnquiry" />
+            <StatCard icon="✅" label="Responded" value={stats.respondedEnquiries} sub="Enquiries closed" href="/staff/manageEnquiry" />
+            <StatCard icon="🕐" label="Pending Reviews" value={stats.pendingReviews} sub="Awaiting vet validation" href="/staff/pendingReview" accent />
+            <StatCard icon="📚" label="Published Content" value={stats.publishedContent} sub="Guides live for pet owners" href="/staff/manageContent" />
+          </div>
+
+          {/* Quick actions */}
+          <div style={{ marginBottom: "32px" }}>
+            <h2 style={{ fontSize: "16px", fontWeight: "bold", color: "#111827", marginBottom: "12px" }}>Quick Actions</h2>
+            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+              <Link href="/staff/manageEnquiry" style={{ padding: "10px 20px", backgroundColor: "#dc2626", color: "white", borderRadius: "4px", textDecoration: "none", fontSize: "14px", fontWeight: "600" }}>
+                💬 View Enquiries
+              </Link>
+              <Link href="/staff/manageContent" style={{ padding: "10px 20px", backgroundColor: "white", border: "1px solid #e5e7eb", color: "#374151", borderRadius: "4px", textDecoration: "none", fontSize: "14px", fontWeight: "600" }}>
+                📋 Create Guide
+              </Link>
+            </div>
+          </div>
+
+          {/* Recent enquiries */}
+          <div>
+            <h2 style={{ fontSize: "16px", fontWeight: "bold", color: "#111827", marginBottom: "12px" }}>Recent Enquiries</h2>
+            <div style={{ backgroundColor: "white", borderRadius: "8px", border: "1px solid #e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.08)", overflow: "hidden" }}>
+              {recentEnquiries.length === 0 && !loading ? (
+                <p style={{ padding: "20px", fontSize: "14px", color: "#9ca3af", margin: 0 }}>No recent enquiries.</p>
+              ) : (
+                recentEnquiries.map((item, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderBottom: i < recentEnquiries.length - 1 ? "1px solid #f3f4f6" : "none" }}>
+                    <div>
+                      <p style={{ fontSize: "14px", fontWeight: "600", color: "#111827", margin: "0 0 2px 0" }}>{item.subject}</p>
+                      <p style={{ fontSize: "12px", color: "#9ca3af", margin: 0 }}>{item.time}</p>
+                    </div>
+                    <span style={{ fontSize: "12px", fontWeight: "500", padding: "3px 10px", borderRadius: "999px", backgroundColor: statusColor[item.status] ?? "#f3f4f6", color: statusText[item.status] ?? "#374151" }}>
+                      {item.status}
+                    </span>
+                  </div>
+                ))
+              )}
+              <div style={{ padding: "10px 20px", borderTop: "1px solid #f3f4f6" }}>
+                <Link href="/staff/manageEnquiry" style={{ fontSize: "13px", color: "#dc2626", fontWeight: "600", textDecoration: "none" }}>
+                  View all enquiries →
+                </Link>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <Footer />
+    </main>
   );
 }

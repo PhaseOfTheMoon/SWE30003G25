@@ -12,22 +12,33 @@ import {
 
 type LoadState = "loading" | "ready" | "error";
 
+// The ContentPage component is responsible for displaying the first-aid content to users. 
+// It fetches the published first-aid content from the backend and organizes it by pet type. Users can select a pet type to view the relevant guides and educational videos. The component also handles loading states, error messages, and provides a user-friendly interface for navigating the content. (WC)
 function toYouTubeEmbed(url: string): string | null {
   try {
     const u = new URL(url);
-    let id: string | null = null;
     if (u.hostname === "youtu.be") {
-      id = u.pathname.slice(1);
-    } else if (u.hostname.includes("youtube.com")) {
-      if (u.pathname === "/watch") id = u.searchParams.get("v");
-      else if (u.pathname.startsWith("/embed/")) return url;
+      const id = u.pathname.slice(1).split("/")[0];
+      return id ? `https://www.youtube.com/embed/${id}` : null;
     }
-    return id ? `https://www.youtube.com/embed/${id}` : null;
+    if (u.hostname.includes("youtube.com")) {
+      if (u.pathname === "/watch") {
+        const v = u.searchParams.get("v");
+        return v ? `https://www.youtube.com/embed/${v}` : null;
+      }
+      if (u.pathname.startsWith("/embed/")) return url;
+      if (u.pathname.startsWith("/shorts/")) {
+        const id = u.pathname.split("/shorts/")[1]?.split("/")[0];
+        return id ? `https://www.youtube.com/embed/${id}` : null;
+      }
+    }
+    return null;
   } catch {
     return null;
   }
 }
 
+// The ContentPage component is responsible for displaying the first-aid content to users. (WC)
 export default function ContentPage() {
   const [state, setState] = useState<LoadState>("loading");
   const [items, setItems] = useState<FirstAidContentBundle[]>([]);
@@ -174,9 +185,21 @@ export default function ContentPage() {
                                 {step.instruction}
                               </span>
                               {step.videoUrl && (
-                                <a href={step.videoUrl} target="_blank" rel="noreferrer" className={styles.stepLink}>
-                                  Open step demo
-                                </a>
+                                toYouTubeEmbed(step.videoUrl) ? (
+                                  <div className={styles.stepVideoEmbed}>
+                                    <iframe
+                                      className={styles.videoIframe}
+                                      src={toYouTubeEmbed(step.videoUrl)!}
+                                      title={`Step ${step.stepNumber} demo`}
+                                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                      allowFullScreen
+                                    />
+                                  </div>
+                                ) : (
+                                  <a href={step.videoUrl} target="_blank" rel="noreferrer" className={styles.videoFallback} style={{ marginTop: '8px' }}>
+                                    Open step demo ↗
+                                  </a>
+                                )
                               )}
                             </span>
                           </li>

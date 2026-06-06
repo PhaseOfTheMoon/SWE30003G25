@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import DashboardLayout from '@/components/dashboardLayout'
+import DashboardLayout from '@/app/components/dashboardLayout'
 import supabase from '@/lib/supabase'
 import {
   createFirstAidContent,
@@ -22,13 +22,17 @@ import {
 } from '@/lib/content'
 import { STAFF_NAV } from '@/app/components/sidebar'
 
-const PET_TYPES = ['Dog', 'Cat', 'Bird', 'Rabbit', 'Other']
+// Defines pet types and emergency categories as constants for dropdown selection in the form. 
+// In a real application, these might be fetched from the database or defined in a shared config file. (WC)
+const PET_TYPES = ['Dog', 'Cat', 'Bird', 'Rabbit', 'Small Pets']
 const CATEGORIES = ['Choking', 'Bleeding', 'Burns', 'Fracture', 'Poisoning', 'Seizure']
 
 type ContentType = 'guide' | 'video' | 'quiz'
 
+// In a real application, we would likely want to define these types in a shared file and import them where needed, 
+// but for simplicity we will define them here. (WC)
 type GuideStep = {
-  stepNumber:  number
+  stepNumber: number
   instruction: string
   videoUrl: string
 }
@@ -54,16 +58,16 @@ export default function StaffContentPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) setStaffUserID(user.id)
 
-      // Fetch all vets joined with their profile name
+      // Fetch all vets joined with their profile name (WC)
       const { data, error } = await supabase
         .from('veterinarian')
         .select('id, profiles!veterinarian_id_fkey(name)')
-        console.log('vets data:', data, 'error:', error)
+      console.log('vets data:', data, 'error:', error)
 
       if (!error && data) {
         setVets(data.map((v: any) => ({
           vetID: v.id,
-          name:  v.profiles?.name ?? 'Unknown Vet',
+          name: v.profiles?.name ?? 'Unknown Vet',
         })))
       }
     }
@@ -81,7 +85,7 @@ export default function StaffContentPage() {
   const [savedVideo, setSavedVideo] = useState<EducationalVideo | null>(null)
   const [savedQuiz, setSavedQuiz] = useState<Quiz | null>(null)
 
-  // guide
+  // guide 
   const [guideTitle, setGuideTitle] = useState('')
   const [steps, setSteps] = useState<GuideStep[]>([
     { stepNumber: 1, instruction: '', videoUrl: '' },
@@ -95,8 +99,10 @@ export default function StaffContentPage() {
   // quiz
   const [quizTitle, setQuizTitle] = useState('')
   const [questions, setQuestions] = useState<QuizQuestion[]>([
-    { question: '', options: ['', '', '', ''], answer: 0 },
+    { question: '', options: ['', '', '', ''], answer: '' },
   ])
+  // Track correct answer by index in UI; converted to text on save 
+  const [answerIndexes, setAnswerIndexes] = useState<number[]>([-1])
 
   // Step 3
   const [selectedVet, setSelectedVet] = useState('')
@@ -113,7 +119,7 @@ export default function StaffContentPage() {
 
   const typeSaved = !!(savedGuides.length || savedVideo || savedQuiz)
 
-  // Auto-refresh review status every 5 seconds if pending
+  // Auto-refresh review status every 5 seconds if pending (WC)
   useEffect(() => {
     if (!content || !reviewRecord || reviewRecord.status !== 'pending') return
     const id = setInterval(async () => {
@@ -123,12 +129,15 @@ export default function StaffContentPage() {
         clearInterval(id)
         if (savedGuides.length) { setUpdTitle(savedGuides[0].title); setUpdBody(savedGuides[0].instruction); setUpdVideoUrl(savedGuides[0].videoUrl ?? '') }
         if (savedVideo) { setUpdTitle(savedVideo.title); setUpdBody(savedVideo.description ?? ''); setUpdVideoUrl(savedVideo.videoUrl) }
-        if (savedQuiz)  { setUpdTitle(savedQuiz.title) }
+        if (savedQuiz) { setUpdTitle(savedQuiz.title) }
       }
     }, 5000)
     return () => clearInterval(id)
   }, [content, reviewRecord, savedGuides, savedVideo, savedQuiz])
 
+  // handlers for creating content record, saving guide/video/quiz, requesting validation, updating content, etc. 
+  // Each handler manages its own loading state and feedback messages for success/error. In a real application, we would likely want to add more robust error handling and validation, 
+  // but for simplicity we will just check that required fields are filled in before allowing actions. (WC)
   async function handleCreateContent() {
     if (!petType || !emergencyCategory || !staffUserID) return
     setCreatingContent(true); setFeedback(null)
@@ -140,7 +149,7 @@ export default function StaffContentPage() {
     finally { setCreatingContent(false) }
   }
 
-  // handlers for saving guide, video, quiz 
+  // handlers for saving guide, video, quiz (WC)
   async function handleSaveGuide() {
     if (!content || !guideTitle || steps.some(s => !s.instruction)) return
     setSavingType(true); setFeedback(null)
@@ -160,7 +169,8 @@ export default function StaffContentPage() {
     finally { setSavingType(false) }
   }
 
-  // since we only allow creating one type of content per record, the guide and video handlers are mutually exclusive, so we can store the saved video/guide directly without needing an array
+  // since we only allow creating one type of content per record, the guide and video handlers are mutually exclusive, 
+  // so we can store the saved video/guide directly without needing an array (WC)
   async function handleSaveVideo() {
     if (!content || !videoTitle || !videoUrl) return
     setSavingType(true); setFeedback(null)
@@ -172,7 +182,7 @@ export default function StaffContentPage() {
     finally { setSavingType(false) }
   }
 
-  // for quiz, we allow multiple questions but they belong to the same quiz record, so we can store the saved quiz directly without needing an array
+  // for quiz, we allow multiple questions but they belong to the same quiz record, so we can store the saved quiz directly without needing an array (WC)
   async function handleSaveQuiz() {
     if (!content || !quizTitle || questions.some(q => !q.question)) return
     if (questions.some(q => q.options.some(o => !o.trim()))) {
@@ -180,16 +190,23 @@ export default function StaffContentPage() {
       return
     }
     // in a real application, we would likely want to validate the quiz more thoroughly (e.g. at least 2 questions, each with 4 options, etc.) 
-    // and provide a better UI for managing questions and options, but for simplicity we will just check that all fields are filled in before saving.
+    // and provide a better UI for managing questions and options, but for simplicity we will just check that all fields are filled in before saving. (WC)
     setSavingType(true); setFeedback(null)
     try {
-      const quiz = await createQuiz({ contentID: content.contentID, title: quizTitle, questions })
+      // Convert answerIndex to answer text before saving
+      const questionsWithAnswer = questions.map((q, i) => ({
+        ...q,
+        answer: answerIndexes[i] >= 0 ? q.options[answerIndexes[i]] : '',
+      }))
+      const quiz = await createQuiz({ contentID: content.contentID, title: quizTitle, questions: questionsWithAnswer, petType, emergencyCategory })
       setSavedQuiz(quiz)
       setFeedback({ msg: 'Quiz saved.', ok: true })
     } catch (e: any) { setFeedback({ msg: 'Error: ' + e.message, ok: false }) }
     finally { setSavingType(false) }
   }
 
+  // handler for requesting vet validation. In a real application, we would likely want to allow the staff to send update requests after review as well, 
+  // but for simplicity we will just implement the initial validation request here. (WC)
   async function handleRequestValidation() {
     if (!content || !selectedVet) return
     setRequesting(true); setFeedback(null)
@@ -202,7 +219,7 @@ export default function StaffContentPage() {
   }
 
   // for simplicity, the update handler can update the title and either guide steps or video description based on what content type was created. In a real application, 
-  // we would likely want more granular update handlers and forms for each content type.
+  // we would likely want more granular update handlers and forms for each content type. (WC)
   async function handleUpdateContent() {
     if (!updTitle) return
     setUpdating(true); setFeedback(null)
@@ -212,7 +229,7 @@ export default function StaffContentPage() {
       } else if (savedVideo) {
         await updateEducationalVideo(savedVideo.videoID, updTitle, updVideoUrl, updBody)
       } else if (savedQuiz) {
-        await updateQuiz(savedQuiz.quizID, updTitle, questions)
+        await updateQuiz(savedQuiz.quizID, updTitle, questions, petType, emergencyCategory)
       }
       setFeedback({ msg: 'Content updated successfully.', ok: true })
     } catch (e: any) { setFeedback({ msg: 'Error: ' + e.message, ok: false }) }
@@ -230,7 +247,7 @@ export default function StaffContentPage() {
     setSteps(prev => prev.filter((_, idx) => idx !== i).map((s, idx) => ({ ...s, stepNumber: idx + 1 })))
   }
 
-  // quiz helpers
+  // quiz form handlers
   function updateQuestion(i: number, field: keyof QuizQuestion, value: any) {
     setQuestions(prev => prev.map((q, idx) => idx === i ? { ...q, [field]: value } : q))
   }
@@ -239,14 +256,16 @@ export default function StaffContentPage() {
       idx === qi ? { ...q, options: q.options.map((o, j) => j === oi ? value : o) } : q))
   }
   function addQuestion() {
-    setQuestions(prev => [...prev, { question: '', options: ['', '', '', ''], answer: 0 }])
+    setQuestions(prev => [...prev, { question: '', options: ['', '', '', ''], answer: '' }])
+    setAnswerIndexes(prev => [...prev, -1])
   }
   function removeQuestion(i: number) {
     setQuestions(prev => prev.filter((_, idx) => idx !== i))
+    setAnswerIndexes(prev => prev.filter((_, idx) => idx !== i))
   }
 
   return (
-    <DashboardLayout role="Staff" name="Alex Wong" navItems={STAFF_NAV}>
+    <DashboardLayout role="Staff" navItems={STAFF_NAV}>
       <div style={{ maxWidth: '720px', margin: '0 auto' }}>
 
         <div style={{ marginBottom: '28px' }}>
@@ -395,8 +414,8 @@ export default function StaffContentPage() {
                     <div className="space-y-2">
                       {q.options.map((opt, oi) => (
                         <div key={oi} className="flex items-center gap-2">
-                          <input type="radio" name={`q${qi}-answer`} checked={q.answer === oi}
-                            onChange={() => updateQuestion(qi, 'answer', oi)}
+                          <input type="radio" name={`q${qi}-answer`} checked={answerIndexes[qi] === oi}
+                            onChange={() => setAnswerIndexes(prev => prev.map((v, idx) => idx === qi ? oi : v))}
                             className="w-4 h-4 shrink-0 text-blue-600" />
                           <input type="text" value={opt} onChange={e => updateOption(qi, oi, e.target.value)}
                             placeholder={`Option ${oi + 1}`} className={INPUT_CLS} />
@@ -421,7 +440,7 @@ export default function StaffContentPage() {
             <SavedBadge>
               {savedGuides.length > 0 && `Guide saved — ${savedGuides.length} step${savedGuides.length > 1 ? 's' : ''}`}
               {savedVideo && `Video saved — ID: ${savedVideo.videoID}`}
-              {savedQuiz  && `Quiz saved — ID: ${savedQuiz.quizID}`}
+              {savedQuiz && `Quiz saved — ID: ${savedQuiz.quizID}`}
             </SavedBadge>
           )}
         </Step>
@@ -494,7 +513,7 @@ export default function StaffContentPage() {
   )
 }
 
-// Reusable components for steps, fields, buttons, etc.
+// Reusable components for steps, fields, buttons, etc. (WC)
 function Step({ step, title, done, locked = false, children }: {
   step: number; title: string; done: boolean; locked?: boolean; children: React.ReactNode
 }) {
@@ -510,7 +529,7 @@ function Step({ step, title, done, locked = false, children }: {
     </div>
   )
 }
-// In a real application, we would likely want to create more reusable components for form fields, buttons, badges, etc. to keep the code DRY and maintainable, but for simplicity we will define them inline here.
+// In a real application, we would likely want to create more reusable components for form fields, buttons, badges, etc. to keep the code DRY and maintainable, but for simplicity we will define them inline here. (WC)
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
@@ -520,7 +539,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   )
 }
 
-// A simple select component that can be reused for pet type and emergency category selection. In a real application, we might want to create more customizable form components like this.
+// A simple select component that can be reused for pet type and emergency category selection. In a real application, we might want to create more customizable form components like this. (WC)
 function Select({ value, onChange, disabled, options }: {
   value: string; onChange: (v: string) => void; disabled?: boolean; options: string[]
 }) {
@@ -533,7 +552,7 @@ function Select({ value, onChange, disabled, options }: {
   )
 }
 
-// A reusable button component that can be used for various actions like creating content, saving, requesting validation, etc. It accepts props for styling, click handler, and disabled state.
+// A reusable button component that can be used for various actions like creating content, saving, requesting validation, etc. It accepts props for styling, click handler, and disabled state. (WC)
 function Btn({ children, className = '', onClick, disabled }: {
   children: React.ReactNode; className?: string; onClick?: () => void; disabled?: boolean
 }) {
@@ -545,7 +564,7 @@ function Btn({ children, className = '', onClick, disabled }: {
   )
 }
 
-// A badge component to indicate saved content with a checkmark. It can be reused for showing the status of saved guides, videos, quizzes, etc.
+// A badge component to indicate saved content with a checkmark. It can be reused for showing the status of saved guides, videos, quizzes, etc. (WC)
 function SavedBadge({ children }: { children: React.ReactNode }) {
   return (
     <div className="mt-4 bg-green-50 border border-green-200 rounded-lg px-4 py-2.5 text-sm text-green-800">

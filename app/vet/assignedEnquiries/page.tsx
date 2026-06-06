@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import DashboardLayout from '@/components/dashboardLayout'
+import DashboardLayout from '@/app/components/dashboardLayout'
 import {
   viewAssignedEnquiry,
   respondAssignedEnquiry,
@@ -12,7 +12,7 @@ import { VET_NAV } from '@/app/components/sidebar'
 
 // The AssignedEnquiriesPage component is the main interface for veterinarians to view and respond to enquiries that have been assigned to them. 
 // It fetches the list of assigned enquiries from the backend (using Supabase) and displays them in a list on the left side of the dashboard. When a veterinarian selects an enquiry, they can see the details on the right side and provide a professional response. 
-// The page also handles loading states, form submission, and feedback messages to ensure a smooth user experience.
+// The page also handles loading states, form submission, and feedback messages to ensure a smooth user experience. (WC)
 export default function AssignedEnquiriesPage() {
   const [enquiries, setEnquiries] = useState<Enquiry[]>([])
   const [loading, setLoading] = useState(true)
@@ -30,7 +30,7 @@ export default function AssignedEnquiriesPage() {
   }, [])
 
   // The loadEnquiries function fetches the list of enquiries assigned to the currently logged-in veterinarian using their user ID. 
-  // It updates the enquiries state with the fetched data and manages the loading state to provide feedback to the user while the data is being retrieved.
+  // It updates the enquiries state with the fetched data and manages the loading state to provide feedback to the user while the data is being retrieved. (WC)
   async function loadEnquiries(vetID: string) {
     setLoading(true)
     try {
@@ -44,7 +44,7 @@ export default function AssignedEnquiriesPage() {
   }
 
   // The handleRespondAssignedEnquiry function is called when a veterinarian submits a response to an assigned enquiry. 
-  // It updates the enquiry's status and saves the response to the backend.
+  // It updates the enquiry's status and saves the response to the backend. (WC)
   async function handleRespondAssignedEnquiry() {
     if (!selected || !response.trim()) return
     setSubmitting(true)
@@ -63,7 +63,7 @@ export default function AssignedEnquiriesPage() {
   }
 
   return (
-    <DashboardLayout role="Veterinarian" name="Veterinarian" navItems={VET_NAV}>
+    <DashboardLayout role="Veterinarian" navItems={VET_NAV}>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Assigned Enquiries</h1>
 
       <div className="flex gap-6">

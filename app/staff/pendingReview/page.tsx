@@ -1,10 +1,13 @@
 'use client'
 
-import DashboardLayout from '@/components/dashboardLayout'
+import DashboardLayout from '@/app/components/dashboardLayout'
 import { useEffect, useState } from 'react'
 import {
   viewStaffContent,
   resubmitContent,
+  publishContent,
+  editGuideAndResubmit,
+  updateGuide,
   type ContentReview,
 } from '@/lib/content'
 import supabase from '@/lib/supabase'
@@ -15,14 +18,26 @@ type EditDraft = {
   instruction: string
 }
 
-const STATUS_META: Record<string, { bg: string; border: string; text: string; dot: string; label: string }> = {
-  pending: { bg: '#fffbeb', border: '#fde68a', text: '#92400e', dot: '#f59e0b', label: 'Pending Review' },
-  validated: { bg: '#f0fdf4', border: '#bbf7d0', text: '#166534', dot: '#16a34a', label: 'Validated'      },
-  rejected: { bg: '#fff1f2', border: '#fecdd3', text: '#9f1239', dot: '#dc2626', label: 'Rejected'       },
+type GuideStepEdit = {
+  guideID: string
+  title: string
+  instruction: string
+  videoUrl?: string
 }
 
+// We define some constants for mapping content review statuses to their corresponding colors and labels in the UI. 
+// This makes it easy to maintain a consistent design and also allows us to easily update the styling for each status in one place if needed. (WC)
+const STATUS_META: Record<string, { bg: string; border: string; text: string; dot: string; label: string }> = {
+  pending: { bg: '#fffbeb', border: '#fde68a', text: '#92400e', dot: '#f59e0b', label: 'Pending Review' },
+  validated: { bg: '#f0fdf4', border: '#bbf7d0', text: '#166534', dot: '#16a34a', label: 'Validated' },
+  rejected: { bg: '#fff1f2', border: '#fecdd3', text: '#9f1239', dot: '#dc2626', label: 'Rejected' },
+  published: { bg: '#eff6ff', border: '#bfdbfe', text: '#1e40af', dot: '#3b82f6', label: 'Published' },
+}
+
+// We define some constants for mapping content review statuses to their corresponding colors and labels in the UI. 
+// This makes it easy to maintain a consistent design and also allows us to easily update the styling for each status in one place if needed. (WC)
 const CATEGORY_ICON: Record<string, string> = {
-  'Emergency Care':  '🚨',
+  'Emergency Care': '🚨',
   'First Aid': '🩹',
   'Preventive Care': '🛡️',
   'Behavioural': '🧠',
@@ -31,17 +46,21 @@ const CATEGORY_ICON: Record<string, string> = {
 export default function StaffPendingReviewPage() {
   const [reviews, setReviews] = useState<ContentReview[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'validated' | 'rejected'>('all')
+  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'validated' | 'rejected' | 'published'>('all')
   const [expanded, setExpanded] = useState<string | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
   const [drafts, setDrafts] = useState<Record<string, EditDraft>>({})
   const [submitting, setSubmitting] = useState(false)
+  const [publishing, setPublishing] = useState<string | null>(null)
+  const [validatedEditing, setValidatedEditing] = useState<string | null>(null)
+  const [validatedSteps, setValidatedSteps] = useState<Record<string, GuideStepEdit[]>>({})
+  const [revalidating, setRevalidating] = useState(false)
   const [feedback, setFeedback] = useState<Record<string, { type: 'ok' | 'err'; msg: string }>>({})
 
   useEffect(() => { loadContent() }, [])
 
   // Load the content reviews assigned to this staff from the API when the component mounts. We get the current user from Supabase auth, then call viewStaffContent with their user ID to fetch their content reviews. 
-  // The reviews are stored in state and displayed in the UI. We also handle loading state and errors.
+  // The reviews are stored in state and displayed in the UI. We also handle loading state and errors. (WC)
   async function loadContent() {
     setLoading(true)
     try {
@@ -58,10 +77,10 @@ export default function StaffPendingReviewPage() {
 
   // When the staff clicks "Edit" on a rejected content review, we want to populate the edit form with the existing content data so they can make changes. 
   // The startEdit function takes the review being edited, extracts the relevant fields (like title and instruction from the guide), and sets them in the drafts state keyed by reviewID. 
-  // It also sets the editing state to the current reviewID to show the edit form.
+  // It also sets the editing state to the current reviewID to show the edit form. (WC)
   function startEdit(review: ContentReview) {
     const guides = (review as any).guide ?? []
-    const first  = guides[0]
+    const first = guides[0]
     setDrafts(prev => ({
       ...prev,
       [review.reviewID]: {
@@ -72,13 +91,19 @@ export default function StaffPendingReviewPage() {
     setEditing(review.reviewID)
   }
 
-  // When the staff finishes editing and clicks "Resubmit", we call handleResubmit which takes the current draft data for that review and sends it to the API via resubmitContent.
+  // When the staff finishes editing and clicks "Resubmit", we call handleResubmit which takes the current draft data for that review and sends it to the API via resubmitContent. (WC)
   async function handleResubmit(review: ContentReview) {
     const draft = drafts[review.reviewID]
     if (!draft?.title.trim() || !draft?.instruction.trim()) return
     setSubmitting(true)
     try {
-      const updated = await resubmitContent(review.reviewID, draft)
+      // Save the edited guide step first (WC)
+      const guides = (review as any).guide ?? []
+      if (guides[0]) {
+        await updateGuide(guides[0].guideID, draft.title, draft.instruction, guides[0].videoUrl ?? undefined)
+      }
+      // Then resubmit for vet re-validation (WC)
+      const updated = await resubmitContent(review.reviewID)
       setReviews(prev => prev.map(r => r.reviewID === updated.reviewID ? updated : r))
       setEditing(null)
       setFeedback(prev => ({ ...prev, [review.reviewID]: { type: 'ok', msg: 'Resubmitted for vet review.' } }))
@@ -89,27 +114,78 @@ export default function StaffPendingReviewPage() {
     }
   }
 
+  // When the staff clicks "Publish" on a validated content review, we call handlePublish which sends a request to the API to publish the content. 
+  // If successful, we update the review in state with the latest data returned from the API (which should now have status "published") and show a success message. (WC)
+  async function handlePublish(review: ContentReview) {
+    setPublishing(review.reviewID)
+    try {
+      const updated = await publishContent(review.reviewID)
+      setReviews(prev => prev.map(r => r.reviewID === review.reviewID ? { ...r, ...updated } : r))
+      setFeedback(prev => ({ ...prev, [review.reviewID]: { type: 'ok', msg: 'Posted to dashboard! Content is now visible to users.' } }))
+    } catch (e: any) {
+      setFeedback(prev => ({ ...prev, [review.reviewID]: { type: 'err', msg: 'Publish failed: ' + e.message } }))
+    } finally {
+      setPublishing(null)
+    }
+  }
+
+  // When the staff clicks "Edit & Resubmit" on a validated content review, we want to allow them to make changes and resubmit for vet re-validation. 
+  // The startValidatedEdit function populates the validatedSteps state with the existing guide steps data for that review, and sets validatedEditing to the current reviewID to show the edit form. (WC)
+  function startValidatedEdit(review: ContentReview) {
+    const guides = (review as any).guide ?? []
+    setValidatedSteps(prev => ({
+      ...prev,
+      [review.reviewID]: guides.map((g: any) => ({
+        guideID: g.guideID,
+        title: g.title ?? '',
+        instruction: g.instruction ?? '',
+        videoUrl: g.videoUrl ?? '',
+      })),
+    }))
+    setValidatedEditing(review.reviewID)
+  }
+
+  // When the staff clicks "Save and Revalidate" on a validated content review, we call handleSaveAndRevalidate which saves the edited guide steps and resubmits the content for vet re-validation. (WC)
+  async function handleSaveAndRevalidate(review: ContentReview) {
+    const steps = validatedSteps[review.reviewID] ?? []
+    if (steps.some(s => !s.title.trim() || !s.instruction.trim())) return
+    setRevalidating(true)
+    try {
+      const updated = await editGuideAndResubmit(review.reviewID, steps)
+      await loadContent()
+      setValidatedEditing(null)
+      setFeedback(prev => ({ ...prev, [review.reviewID]: { type: 'ok', msg: 'Saved and sent for vet re-validation.' } }))
+    } catch (e: any) {
+      setFeedback(prev => ({ ...prev, [review.reviewID]: { type: 'err', msg: 'Error: ' + e.message } }))
+    } finally {
+      setRevalidating(false)
+    }
+  }
+
+  // We compute some counts for each content review status to display in the tabs and banners. This allows the staff to quickly see how many items they have in each category (pending, validated, rejected, published) and also shows the total count. (WC)
   const counts = {
     all: reviews.length,
     pending: reviews.filter(r => r.status === 'pending').length,
     validated: reviews.filter(r => r.status === 'validated').length,
     rejected: reviews.filter(r => r.status === 'rejected').length,
+    published: reviews.filter(r => r.status === 'published').length,
   }
 
   // We want to allow the staff to filter the content reviews by their status using tabs (All, Pending, Validated, Rejected). 
-  // The filtered variable computes the list of reviews to display based on the activeTab state. If "All" is selected, we show all reviews; otherwise, we filter by the selected status.
+  // The filtered variable computes the list of reviews to display based on the activeTab state. If "All" is selected, we show all reviews; otherwise, we filter by the selected status. (WC)
   const filtered = activeTab === 'all' ? reviews : reviews.filter(r => r.status === activeTab)
 
-  // When the staff clicks on a content review in the list, we want to show its details in an expanded panel. The toggleExpanded function sets the expanded state to the reviewID of the clicked review, or collapses it if it's already expanded.
+  // When the staff clicks on a content review in the list, we want to show its details in an expanded panel. The toggleExpanded function sets the expanded state to the reviewID of the clicked review, or collapses it if it's already expanded. (WC)
   const tabs = [
     { key: 'all' as const, label: 'All', count: counts.all },
     { key: 'pending' as const, label: 'Pending', count: counts.pending },
     { key: 'validated' as const, label: 'Validated', count: counts.validated },
     { key: 'rejected' as const, label: 'Rejected', count: counts.rejected },
+    { key: 'published' as const, label: 'Published', count: counts.published },
   ]
 
   return (
-    <DashboardLayout role="Staff" name="Alex Wong" navItems={STAFF_NAV}>
+    <DashboardLayout role="Staff" navItems={STAFF_NAV}>
 
       {/* Header */}
       <div style={{ marginBottom: '28px' }}>
@@ -123,6 +199,20 @@ export default function StaffPendingReviewPage() {
           Track validation status of your submitted guides. Edit and resubmit rejected content.
         </p>
       </div>
+
+      {/* Validated banner — ready to publish */}
+      {counts.validated > 0 && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '12px',
+          backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0',
+          borderRadius: '8px', padding: '12px 16px', marginBottom: '12px',
+        }}>
+          <span style={{ fontSize: '18px' }}>✅</span>
+          <p style={{ fontSize: '14px', color: '#166534', margin: 0, fontWeight: '500' }}>
+            <strong>{counts.validated} item{counts.validated !== 1 ? 's' : ''}</strong> validated by the vet and ready to publish.
+          </p>
+        </div>
+      )}
 
       {/* Rejected banner */}
       {counts.rejected > 0 && (
@@ -201,6 +291,9 @@ export default function StaffPendingReviewPage() {
             const draft = drafts[review.reviewID]
             const fb = feedback[review.reviewID]
             const isRejected = review.status === 'rejected'
+            const isValidated = review.status === 'validated'
+            const isValidatedEdit = validatedEditing === review.reviewID
+            const vsteps = validatedSteps[review.reviewID] ?? []
 
             return (
               <div
@@ -208,7 +301,7 @@ export default function StaffPendingReviewPage() {
                 style={{
                   backgroundColor: 'white',
                   borderRadius: '8px',
-                  border: `1px solid ${isRejected ? '#fecdd3' : '#e5e7eb'}`,
+                  border: `1px solid ${isRejected ? '#fecdd3' : isValidated ? '#bbf7d0' : '#e5e7eb'}`,
                   boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
                   overflow: 'hidden',
                 }}
@@ -460,6 +553,110 @@ export default function StaffPendingReviewPage() {
                         <p style={{ fontSize: '13px', color: '#374151', margin: 0, lineHeight: '1.6', fontStyle: 'italic' }}>
                           "{review.comment}"
                         </p>
+                      </div>
+                    )}
+
+                    {/* Action row — publish + edit for validated */}
+                    {isValidated && !isValidatedEdit && (
+                      <div style={{ padding: '14px 20px', borderTop: '1px solid #f3f4f6', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <button
+                          onClick={() => handlePublish(review)}
+                          disabled={publishing === review.reviewID}
+                          style={{
+                            padding: '9px 20px',
+                            backgroundColor: '#1d4ed8', color: 'white',
+                            border: 'none', borderRadius: '4px',
+                            fontSize: '13px', fontWeight: '700',
+                            cursor: publishing === review.reviewID ? 'not-allowed' : 'pointer',
+                            opacity: publishing === review.reviewID ? 0.6 : 1,
+                          }}
+                        >
+                          {publishing === review.reviewID ? 'Posting…' : '📢 Post to Dashboard'}
+                        </button>
+                        {guides.length > 0 && (
+                          <button
+                            onClick={() => startValidatedEdit(review)}
+                            style={{
+                              padding: '9px 20px',
+                              backgroundColor: 'white', color: '#374151',
+                              border: '1px solid #d1d5db', borderRadius: '4px',
+                              fontSize: '13px', fontWeight: '600',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            ✏️ Edit
+                          </button>
+                        )}
+                        <p style={{ fontSize: '12px', color: '#6b7280', margin: 0 }}>
+                          Edit will send the content back for vet re-validation.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Edit form for validated guide content */}
+                    {isValidated && isValidatedEdit && (
+                      <div style={{ borderTop: '1px solid #f3f4f6', padding: '16px 20px', backgroundColor: '#fafafa' }}>
+                        <p style={{ fontSize: '12px', fontWeight: '700', color: '#374151', margin: '0 0 14px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          ✏️ Edit Guide Steps
+                        </p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '16px' }}>
+                          {vsteps.map((step, si) => (
+                            <div key={step.guideID} style={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '14px' }}>
+                              <p style={{ fontSize: '12px', fontWeight: '700', color: '#6b7280', margin: '0 0 10px' }}>Step {si + 1}</p>
+                              <div style={{ marginBottom: '10px' }}>
+                                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '4px' }}>Title</label>
+                                <input
+                                  type="text"
+                                  value={step.title}
+                                  onChange={e => setValidatedSteps(prev => ({
+                                    ...prev,
+                                    [review.reviewID]: prev[review.reviewID].map((s, i) => i === si ? { ...s, title: e.target.value } : s),
+                                  }))}
+                                  style={{ width: '100%', fontSize: '13px', padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: '4px', boxSizing: 'border-box', color: '#111827' }}
+                                />
+                              </div>
+                              <div>
+                                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#374151', marginBottom: '4px' }}>Instruction</label>
+                                <textarea
+                                  rows={3}
+                                  value={step.instruction}
+                                  onChange={e => setValidatedSteps(prev => ({
+                                    ...prev,
+                                    [review.reviewID]: prev[review.reviewID].map((s, i) => i === si ? { ...s, instruction: e.target.value } : s),
+                                  }))}
+                                  style={{ width: '100%', fontSize: '13px', padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: '4px', resize: 'vertical', boxSizing: 'border-box', color: '#111827' }}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                          <button
+                            onClick={() => handleSaveAndRevalidate(review)}
+                            disabled={revalidating || vsteps.some(s => !s.title.trim() || !s.instruction.trim())}
+                            style={{
+                              padding: '9px 20px',
+                              backgroundColor: '#16a34a', color: 'white',
+                              border: 'none', borderRadius: '4px',
+                              fontSize: '13px', fontWeight: '700',
+                              cursor: revalidating ? 'not-allowed' : 'pointer',
+                              opacity: revalidating ? 0.6 : 1,
+                            }}
+                          >
+                            {revalidating ? 'Saving…' : '📤 Save & Send for Re-validation'}
+                          </button>
+                          <button
+                            onClick={() => setValidatedEditing(null)}
+                            style={{
+                              padding: '9px 14px',
+                              backgroundColor: 'transparent', color: '#6b7280',
+                              border: '1px solid #e5e7eb', borderRadius: '4px',
+                              fontSize: '13px', cursor: 'pointer',
+                            }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
                       </div>
                     )}
 
