@@ -16,6 +16,9 @@ The web application is built for a Veterinary Association to help pet owners get
 -Deployed on: Vercel
 
 ## How to Run
+Enviroment file:
+https://swinburnesarawak-my.sharepoint.com/:f:/g/personal/104401173_students_swinburne_edu_my/IgBvBpFu5DqARLWb5mxpChINAZcaFLP8eH9_OLMRBU0Mgk0?e=3AM4oQ 
+
 First install the dependencies:
 npm install
 
